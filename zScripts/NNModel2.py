@@ -12,6 +12,7 @@ from tensorflow.keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from matplotlib import pyplot
+from pathlib import Path
 from sys import platform
 
 import logging
@@ -60,18 +61,18 @@ def visualiseModel(history):
 
 def Run():
     # LOAD DATA
-    if platform == "linux" or platform == "linux2":
-        working_directory = os.getcwd() + r"/SUMO/"
-        data_directory = (working_directory + r"RANKED_CSV/")
-    elif platform == "win32":
-        working_directory = os.getcwd() + r"\\SUMO\\"
-        data_directory = (working_directory + r"RANKED_CSV\\")
+    current_dir = Path(os.path.dirname(__file__))
+    if sys.platform == "linux" or sys.platform == "linux2":
+        data_dir = os.path.join(current_dir.parent, 'RANKED_CSV/')
+    elif sys.platform == "win32":
+        data_dir =  os.path.join(current_dir.parent, 'RANKED_CSV\\')
+    print (data_dir)
 
-    training_files = os.listdir(data_directory)
+    training_files = os.listdir(data_dir)
 
     dataframes = []
-    for file_name in training_files:
-        data = pd.read_csv(data_directory + file_name)
+    for fname in training_files:
+        data = pd.read_csv(os.path.join(data_dir, fname))
         dataframes.append(data)
     dataframe = pd.concat(dataframes)
 
@@ -84,25 +85,22 @@ def Run():
     #dataset = OHEncoder(dataframe)
 
     # DATA SETUP
-
     train_df, test_df = train_test_split(dataframe, test_size=0.2)
     train_df, val_df =train_test_split(train_df, test_size=0.2)
 
-    train_df.pop('Rank')
-    train_labels = (train_df.pop('Targets'))
+    train_labels = (train_df.pop('Rank'))
     train_features = (train_df)
-
 
     #train_x = tf.data.Dataset.from_tensor_slices((dict(train_df), train_labels))
 
     print (train_features)
     print (train_labels)
 
-    val_labels = np.array(val_df.pop('Targets'))
-    val_features = np.array(val_df)
+    #val_labels = np.array(val_df.pop('Targets'))
+    #val_features = np.array(val_df)
 
-    test_labels = np.array(test_df.pop('Targets'))
-    test_features = np.array(test_df)
+    #test_labels = np.array(test_df.pop('Targets'))
+    #test_features = np.array(test_df)
 
     # NORMALISE DATA
 
@@ -110,13 +108,13 @@ def Run():
     train_std = np.std(train_features)
     train_normalised = 0.5 * (np.tanh(0.01 * ((train_features - train_mean) / train_std)) + 1)
 
-    val_mean = np.mean(val_features)
-    val_std = np.std(val_features)
-    val_normalised = 0.5 * (np.tanh(0.01 * ((val_features - val_mean) / val_std)) + 1)
+    #val_mean = np.mean(val_features)
+    #val_std = np.std(val_features)
+    #val_normalised = 0.5 * (np.tanh(0.01 * ((val_features - val_mean) / val_std)) + 1)
 
-    test_mean = np.mean(test_features)
-    test_std = np.std(test_features)
-    test_normalised = 0.5 * (np.tanh(0.01 * ((test_features - test_mean) / test_std)) + 1)
+    #test_mean = np.mean(test_features)
+    #test_std = np.std(test_features)
+    #test_normalised = 0.5 * (np.tanh(0.01 * ((test_features - test_mean) / test_std)) + 1)
 
     # DEFINE MODEL
 
