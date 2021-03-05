@@ -11,6 +11,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.metrics import confusion_matrix
 from matplotlib import pyplot
 from pathlib import Path
 from sys import platform
@@ -66,7 +67,6 @@ def Run():
         data_dir = os.path.join(current_dir.parent, 'RANKED_CSV/')
     elif sys.platform == "win32":
         data_dir =  os.path.join(current_dir.parent, 'RANKED_CSV\\')
-    print (data_dir)
 
     training_files = os.listdir(data_dir)
 
@@ -92,9 +92,6 @@ def Run():
     train_features = (train_df)
 
     #train_x = tf.data.Dataset.from_tensor_slices((dict(train_df), train_labels))
-
-    print (train_features)
-    print (train_labels)
 
     #val_labels = np.array(val_df.pop('Targets'))
     #val_features = np.array(val_df)
@@ -123,17 +120,43 @@ def Run():
     model.add(Dense(128, activation='sigmoid'))
     model.add(Dense(64, activation='sigmoid'))
     model.add(Dense(32, activation='sigmoid'))
-    model.add(Dense(8, activation='softmax'))
+    model.add(Dense(9, activation='softmax'))
 
     opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
     #loss = tf.keras.losses.CategoricalHinge()#from_logits=True)
-    loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    #loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
     #loss = "mean_squared_error"
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     model.compile(optimizer=opt, loss=loss, metrics=['accuracy'])
 
     history = model.fit(train_features, train_labels, epochs=20, batch_size=30)
 
-    visualiseModel(history)
+    #visualiseModel(history)
+
+    test_labels = test_df.pop('Rank')
+    test_features = test_df
+
+
+    y_actual = []
+    y_pred = []
+    for i in range(250):
+        test_data = test_features.iloc[i].values.tolist()
+        test_data = np.reshape(test_data, (5, 1)).T
+        test_targets = test_labels.iloc[i]
+
+        prediction = model.predict(test_data)
+
+        classes = np.argmax(prediction, axis = 1)
+
+        y_actual.append(test_targets)
+        y_pred.append(classes[0])
+
+        #print ("Prediction:", classes, " Actual:", test_targets)
+
+    print (pd.crosstab(pd.Series(y_actual), pd.Series(y_pred), rownames=['Actual'], colnames=['Predicted'], margins=True))
+
+    conf_matrix_file = os.path.join(current_dir.parent, 'ConfusionMatrix.csv')
+    
 
     #history = model.fit(train_ds, validation_data = val_ds, epochs=num_epoch)
 
