@@ -2,18 +2,24 @@ import os, sys, csv
 import math
 import statistics
 import numpy
+from pathlib import Path
 from sklearn.preprocessing import LabelBinarizer
 
-working_directory = os.getcwd() + r"\\SUMO\\"
-data_files = os.listdir(working_directory + r"\\PROCESSED_CSV\\")
+current_dir = Path(os.path.dirname(__file__))
+if sys.platform == "linux" or sys.platform == "linux2":
+    processed_dir = os.path.join(current_dir.parent, 'PROCESSED_CSV/')
+    ranked_dir = os.path.join(current_dir.parent, 'RANKED_CSV/')
+elif sys.platform == "win32":
+    processed_dir =  os.path.join(current_dir.parent, 'PROCESSED_CSV\\')
+    ranked_dir =  os.path.join(current_dir.parent, 'RANKED_CSV\\')
 
 ranks = [1, 2, 3, 4, 5, 6, 7, 8]
 rank_values = []
-for file_name in data_files:
-    ranked_file_name = str(working_directory + r"RANKED_CSV\\") + str(file_name.replace("_processed.csv", "_ranked.csv"))
+for fname in (os.listdir(processed_dir)):
+    ranked_file_name = os.path.join(ranked_dir, (str(fname.replace("_processed.csv", "_ranked.csv"))))
     with open(ranked_file_name, 'w', newline='') as ranked_file:
         writer = csv.writer(ranked_file)
-        with open((working_directory + r"PROCESSED_CSV\\" + file_name), 'r', newline='') as file:
+        with open(os.path.join(processed_dir, fname), 'r', newline='') as file:
             reader = csv.reader(file)
             data = list(reader)
             step = 0
@@ -25,7 +31,7 @@ for file_name in data_files:
                     writer.writerow(new_row)
                 else:
                     basic_rank = ((1*float(row[1])) + (1*float(row[2])) + (1*float(row[3])) + (1*float(row[4])))/float(row[9])
-                    basic_rank = math.floor(basic_rank/160)
+                    basic_rank = math.floor(basic_rank/20)
                     if basic_rank > 7:
                         basic_rank = 7
 
