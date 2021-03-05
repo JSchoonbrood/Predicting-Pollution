@@ -118,6 +118,9 @@ def Run():
     model = tf.keras.Sequential()
     model.add(Dense(5, input_dim=5))
     model.add(Dense(128, activation='sigmoid'))
+    model.add(Dense(128, activation='sigmoid'))
+    model.add(Dense(128, activation='sigmoid'))
+    model.add(Dense(128, activation='sigmoid'))
     model.add(Dense(64, activation='sigmoid'))
     model.add(Dense(32, activation='sigmoid'))
     model.add(Dense(9, activation='softmax'))
@@ -129,7 +132,7 @@ def Run():
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     model.compile(optimizer=opt, loss=loss, metrics=['accuracy'])
 
-    history = model.fit(train_features, train_labels, epochs=20, batch_size=30)
+    history = model.fit(train_features, train_labels, epochs=30, batch_size=30)
 
     #visualiseModel(history)
 
@@ -139,7 +142,7 @@ def Run():
 
     y_actual = []
     y_pred = []
-    for i in range(250):
+    for i in range(5000):
         test_data = test_features.iloc[i].values.tolist()
         test_data = np.reshape(test_data, (5, 1)).T
         test_targets = test_labels.iloc[i]
@@ -153,10 +156,14 @@ def Run():
 
         #print ("Prediction:", classes, " Actual:", test_targets)
 
-    print (pd.crosstab(pd.Series(y_actual), pd.Series(y_pred), rownames=['Actual'], colnames=['Predicted'], margins=True))
+    conf_matrix_file_csv = os.path.join(current_dir.parent, 'ConfusionMatrix.csv')
+    conf_matrix_file_html = os.path.join(current_dir.parent, 'ConfusionMatrix.html')
+    conf_matrix = pd.crosstab(pd.Series(y_actual), pd.Series(y_pred), rownames=['Actual'], colnames=['Predicted'], margins=True)
+    conf_matrix.to_csv(conf_matrix_file_csv)
+    conf_matrix.to_html(conf_matrix_file_html)
 
-    conf_matrix_file = os.path.join(current_dir.parent, 'ConfusionMatrix.csv')
-    
+
+
 
     #history = model.fit(train_ds, validation_data = val_ds, epochs=num_epoch)
 
