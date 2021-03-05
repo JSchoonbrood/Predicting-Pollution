@@ -1,0 +1,45 @@
+CD TO CURRENT DIRECTORY:
+cd C:\Users\Jake\Desktop\SUMO
+
+OSM TO XML CMD:
+netconvert --osm-files OSM\TRAINING_SIMS\map_1.osm -o OSM\TRAINING_SIMS\map_1.net.xml
+netconvert --osm-files Dunstable.osm -o test.net.xml
+
+Create Random Trips Route, .rou: -e: End of simulation, -b: Beginning of simulation. The route is defined with a set of edges. 50: 50 CARS
+python randomTrips.py -n map_1.net.xml -r map_1.rou.xml -e 3000 l
+python zScripts\randomTrips.py -n OSM\Dunstable.net.xml -r OSM\Dunstable.rou.xml -e 8000 l
+
+THE TRIPS.TRIPS FILE SPECIFIED BEGINNING - END NODE AND THATS IT 
+
+SETUP CONFIG FILE:
+<configuration>
+
+<input>
+<net-file value="my_net.net.xml"/>
+<route-files value="my_route.rou.xml"/>
+</input>
+<time>
+<begin value = "0"/>
+<end value = "2000"/>
+</time>
+
+</configuration>
+
+GENERATING TRIPS FROM OD MATRIX:
+od2trips -c PATH\od2trips.config.xml -n PATH\taz_file.taz.xml -d PATH\OD_file.od -o PATH\od_file.odtrips.xml
+
+ROUTE ASSIGNMENT, USING DUAROUTER
+duarouter -C PATH\diarcfg_file.trips2routes.duarcfg -o od_route_file.odtrips.rou.xml
+
+DUARROUTER CONFIG FILE
+<configuration>
+
+<input>
+<net-file value ="network_file.net.xml"/>
+<route-files value = "od_file.odtrips.xml"/>
+</input>
+
+</configuration>
+
+
+SUMO By default uses Dijkstra

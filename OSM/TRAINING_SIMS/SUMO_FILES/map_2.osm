@@ -1,0 +1,12 @@
+<configuration>
+
+<input>
+<net-file value="C:\\Users\\Jake\\Desktop\\Projects\\SUMO\\OSM\\TRAINING_SIMS\\SUMO_FILES\map_2.net.xml"/>
+<route-files value="C:\\Users\\Jake\\Desktop\\Projects\\SUMO\\OSM\\TRAINING_SIMS\\SUMO_FILES\map_2.rou.xml"/>
+</input
+<time>
+<begin value = "0"/>
+<end value = "2000"/>
+</time>
+
+</configuration>

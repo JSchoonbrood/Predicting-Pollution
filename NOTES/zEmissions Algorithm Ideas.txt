@@ -1,0 +1,58 @@
+WHAT YOU KNOW DURING THE SIMULATION (PREDICTION):
+Estimated Time To Reach Each Node
+Estimated Cost Of Reaching Each Node
+Estimated Pollution Exposure
+
+WHAT YOU KNOW AFTER THE SIMULATION (USED TO CALCULATE ACTUAL EXPOSURE):
+AVERAGE SPEED BETWEEN NODES
+AMOUNT OF TRAFFIC
+TIME SPENT AT EACH JUNCTION
+
+CALCULATED AFTER SIMULATION (RESULTS):
+POLLUTION EXPOSURE AT EACH NODE
+POLLUTION EXPOSURE AT EACH EDGE
+
+
+I NEED TO CREATE A COST FUNCTION TO DETERMINE THE COST OF TRAVELLING ALONG AN EDGE TO A NODE. THIS COST FUNCTION MUST PRODUCE AN EXPOSURE SCORE
+I WANT TO MINIMISE POLLUTION EXPOSURE SCORE
+
+I NEED TO PREDICT THE COST OF TRAVELLING A ROUTE IN TERMS OF POLLUTION EXPOSURE
+
+THE REAL POLLUTION EXPOSURE SCORE WILL BE CALCULATED AFTER THE SIMULATION
+
+I'VE OPTED TO USE SUMO WITH TRACI, CURRENTLY I AM PROGRAMMING THE INTERFACE, AND PROCESSING OUTPUT DATA AFTER THE SIMULATION HAS ENDED.
+
+SO I CALCULATE AN ESTIMATE OF POLLUTION SCORE USING ALL THE DATA AFTER THE SIMULATION HAS ENDED. (SUCH AS AVERAGE SPEED, AVERAGE CARS ETC)
+
+THEN THE IDEA IS TO CREATE A NEURAL NETWORK THAT WILL PREDICT THE POLLUTION SCORE BASED ON DATA WE HAVE DURING THE SIMULATION (NUMBER OF NODES, DISTANCE OF EDGES, NODE NEIGHBOURS ETC)
+
+THIS IS THE PART I'M STUCK ON, AFTER I HAVE A NEURAL NETWORK, DO I DO A SIMPLE METHOD OF JUST TAKING THE FIRST 10 ROUTES FOR EXAMPLE CALCULATED BY SAY DIJKSTRA, SCORING THEM ON POLLUTION AND PICKING THE ONE WITH LEAST POLLUTION EXPOSURE
+
+
+perhaps cluster the groups of routes and look to use different ones
+
+towards the end look at how to distinguish between them
+
+if you say that the rules and metrics were symmastically derived
+if there is an error
+you hope the trend holds
+a reasonably valid assumption is x is better than y.
+
+alternative
+how we analyse bottlenecks in software
+from simulation identify where the hotspots are (well actually if i can reduce that pinch point) (look at this particular road, its predictably slow and dense)
+
+have a simple and complex approach, simple approach ^
+
+mathematically derive the hotspot (local solution)
+
+a set of simple approachs will start to unpack itself
+
+Or do you have any suggestions?
+
+Tenserflow
+LSTM Network
+Like 5 lines of code
+
+
+
