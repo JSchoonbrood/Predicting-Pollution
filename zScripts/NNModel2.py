@@ -4,13 +4,15 @@ import tensorflow as tf
 import pathlib
 import math
 import statistics
+from functools import partial
 import os, sys, csv
 
 from tensorflow import feature_column
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Dense
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer
+import sklearn.preprocessing as preprocessing
+from tensorflow.keras.layers import BatchNormalization, Conv2D, MaxPooling2D, Activation, Flatten, Dropout, Dense
 from sklearn.metrics import confusion_matrix
 from matplotlib import pyplot
 from pathlib import Path
@@ -86,10 +88,16 @@ def Run():
 
     # DATA SETUP
     train_df, test_df = train_test_split(dataframe, test_size=0.2)
-    train_df, val_df =train_test_split(train_df, test_size=0.2)
+    #train_df, val_df =train_test_split(train_df, test_size=0.2)
 
     train_labels = (train_df.pop('Rank'))
+    #train_df.pop('Total_Neighbours')
     train_features = (train_df)
+
+    #x_values = train_df.values #returns a numpy array
+    #min_max_scaler = preprocessing.MinMaxScaler()
+    #x_scaled = min_max_scaler.fit_transform(x_values)
+    #train_features = pd.DataFrame(x_scaled, columns=train_df.columns)
 
     #train_x = tf.data.Dataset.from_tensor_slices((dict(train_df), train_labels))
 
@@ -117,12 +125,21 @@ def Run():
 
     model = tf.keras.Sequential()
     model.add(Dense(5, input_dim=5))
-    model.add(Dense(128, activation='sigmoid'))
-    model.add(Dense(128, activation='sigmoid'))
-    model.add(Dense(128, activation='sigmoid'))
-    model.add(Dense(128, activation='sigmoid'))
-    model.add(Dense(64, activation='sigmoid'))
-    model.add(Dense(32, activation='sigmoid'))
+    model.add(BatchNormalization())
+
+    model.add(Dense(1024,  activation='relu'))
+    model.add(Dropout(0.25))
+
+    model.add(Dense(1024,  activation='relu'))
+    model.add(Dropout(0.25))
+
+    model.add(Dense(1024,  activation='relu'))
+    model.add(Dropout(0.25))
+
+    model.add(Flatten())
+    model.add(Dense(1024,  activation='relu'))
+    model.add(Dropout(0.5))
+
     model.add(Dense(9, activation='softmax'))
 
     opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
@@ -134,9 +151,13 @@ def Run():
 
     history = model.fit(train_features, train_labels, epochs=30, batch_size=30)
 
+    model.save('PollutionPrediction.model')
+
+
     #visualiseModel(history)
 
     test_labels = test_df.pop('Rank')
+    #test_df.pop('Total_Neighbours')
     test_features = test_df
 
 
