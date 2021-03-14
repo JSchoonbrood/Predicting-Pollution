@@ -1,15 +1,23 @@
 import os, sys, csv
+from pathlib import Path
+from sys import platform
 
-working_directory = os.getcwd() + r"\\SUMO\\"
-data_files = os.listdir(working_directory + r"\\CSV\\")
+
+current_dir = Path(os.path.dirname(__file__))
+if sys.platform == "linux" or sys.platform == "linux2":
+    data_dir = os.path.join(current_dir.parent, 'CSV/')
+    new_dir = os.path.join(current_dir.parent, 'PROCESSED_CSV/')
+elif sys.platform == "win32":
+    data_dir =  os.path.join(current_dir.parent, 'CSV\\')
+    new_dir = os.path.join(current_dir.parent, 'PROCESSED_CSV\\')
+
+data_files = os.listdir(data_dir)
 
 for file_name in data_files:
-    processed_file_name = str(working_directory + r"PROCESSED_CSV\\") + str(file_name.replace(".csv", "_processed.csv"))
+    processed_file_name = new_dir + str(file_name.replace(".csv", "_processed.csv"))
     with open(processed_file_name, 'w', newline='') as processed_file:
-        print (processed_file_name)
         writer = csv.writer(processed_file)
-        print ((working_directory + r"CSV\\" + file_name))
-        with open((working_directory + r"CSV\\" + file_name), 'r', newline='') as file:
+        with open(os.path.join(data_dir, file_name), 'r', newline='') as file:
             reader = csv.reader(file)
             data = list(reader)
             for row in data:

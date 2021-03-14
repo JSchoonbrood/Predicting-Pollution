@@ -3,6 +3,8 @@ import traci
 import sumolib
 import re
 
+from pathlib import Path
+from sys import platform
 from datetime import datetime
 from threading import Thread
 
@@ -14,28 +16,39 @@ else:
 
 class runSimulation():
     def __init__(self):
-        self.working_directory = os.getcwd() + r"\SUMO\\"
-        self.simulationChoice = [self.working_directory + r"OSM\\TRAINING_SIMS\\SUMO_FILES\\map_6.sumocfg"]
-        self.net = sumolib.net.readNet(self.working_directory + r"OSM\\TRAINING_SIMS\\SUMO_FILES\\map_6.net.xml")
+        current_dir = Path(os.path.dirname(__file__))
+        if sys.platform == "linux" or sys.platform == "linux2":
+            sim_dir = os.path.join(current_dir.parent, 'OSM/TRAINING_SIMS/SUMO_FILES/')
+            csv_dir = os.path.join(current_dir.parent, 'CSV/')
+        elif sys.platform == "win32":
+            sim_dir =  os.path.join(current_dir.parent, 'OSM\\TRAINING_SIMS\\SUMO_FILES\\')
+            csv_dir = os.path.join(current_dir.parent, 'CSV\\')
 
-        self.netdict = {}
+        base = 12
+        for i in range(2):
+            mapfile = "map_" + str((base+i))
+            file1 = str(mapfile) + ".sumocfg"
+            file2 = str(mapfile) + ".net.xml"
+            self.simulationChoice = os.path.join(sim_dir, file1)
+            self.net = sumolib.net.readNet(os.path.join(sim_dir, file2))
+            self.netdict = {}
 
-        now = datetime.now()
-        format_date = str(now.strftime("%x")) + "_" + str(now.strftime("%X")) + "_" + str(now.strftime("%f"))
-        self.output_file_name =(self.working_directory + r"CSV\\") + format_date.replace("/", "-").replace(":", "-") + ".csv"
+            now = datetime.now()
+            format_date = str(now.strftime("%x")) + "_" + str(now.strftime("%X")) + "_" + str(now.strftime("%f"))
+            self.output_file_name = csv_dir + format_date.replace("/", "-").replace(":", "-") + ".csv"
 
-        with open(self.output_file_name, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Edge", "CO2_Emissions", "CO_Emissions", "HC_Emissions", "NOx_Emissions",
+            with open(self.output_file_name, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(["Edge", "CO2_Emissions", "CO_Emissions", "HC_Emissions", "NOx_Emissions",
                             "Mean_Speed", "Estimated_Travel_Time", "Traffic_Level", "Total_Neighbours",
                             "Length", "Step_Count"])
-        file.close()
+                file.close()
 
-        self.run()
+            self.run()
 
     def run(self):
         sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin\sumo.exe')
-        sumoCmd = [sumoBinary, "-c", self.simulationChoice[0]]
+        sumoCmd = [sumoBinary, "-c", self.simulationChoice]
 
         traci.start(sumoCmd)
 

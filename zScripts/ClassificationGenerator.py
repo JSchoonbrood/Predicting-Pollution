@@ -31,7 +31,7 @@ for fname in (os.listdir(processed_dir)):
                     writer.writerow(new_row)
                 else:
                     basic_rank = ((1*float(row[1])) + (1*float(row[2])) + (1*float(row[3])) + (1*float(row[4])))/float(row[9])
-                    basic_rank = math.floor(basic_rank/20)
+                    basic_rank = math.floor(basic_rank/60)
                     if basic_rank > 7:
                         basic_rank = 7
 
