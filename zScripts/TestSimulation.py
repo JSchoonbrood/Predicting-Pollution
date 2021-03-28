@@ -16,19 +16,27 @@ else:
 
 class runSimulation():
     def __init__(self):
-        self.working_directory = os.getcwd() + r"\SUMO\\"
+        current_dir = Path(os.path.dirname(__file__))
+        if sys.platform == "linux" or sys.platform == "linux2":
+            sim_dir = os.path.join(current_dir.parent, 'OSM/TRAINING_SIMS/SUMO_FILES/')
+            csv_dir = os.path.join(current_dir.parent, 'CSV/')
+        elif sys.platform == "win32":
+            sim_dir =  os.path.join(current_dir.parent, 'OSM\\TRAINING_SIMS\\SUMO_FILES\\')
+            csv_dir = os.path.join(current_dir.parent, 'CSV\\')
 
-        self.config = (self.working_directory + r"OSM\TRAINING_SIMS\Config.ini")
+        self.simulationChoice = os.path.join(sim_dir, "TestSimulation.sumocfg")
+        self.net = sumolib.net.readNet(os.path.join(sim_dir, "TestSimulation.net.xml"))
+        self.netdict = {}
 
-        configParser = ConfigParser.RawConfigParser()
-        configParser.read(self.config)
+        now = datetime.now()
+        format_date = str(now.strftime("%x")) + "_" + str(now.strftime("%X")) + "_" + str(now.strftime("%f"))
+        self.output_file_name = csv_dir + format_date.replace("/", "-").replace(":", "-") + ".csv"
 
-        self.simulationChoice = configParser['DEFAULT']['SimulationPath']
-        self.net = sumolib.net.readNet(configParser['DEFAULT']['NetPath'])
+        self.run()
 
     def run(self):
         sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin\sumo.exe')
-        sumoCmd = [sumoBinary, "-c", self.simulationChoice[0]]
+        sumoCmd = [sumoBinary, "-c", self.simulationChoice]
 
         traci.start(sumoCmd)
 
@@ -36,46 +44,19 @@ class runSimulation():
         while traci.simulation.getMinExpectedNumber() > 0:
             break
 
+    def initialRoute(self):
+        return
+
+    def updateRoute(self):
+        return
+
     def addVehicle(self):
         return
 
     def intervalExec(self):
         return
 
-    def staticDijkstra(self, nodes, start, finish):
-        '''
-        Static Dijkstra
-        Attributes:
-        listOfNodes: Lists Nodes to Search, FORMAT: ['A', 'B', 'C', 'D', ...]
-        neighbourhood: List Distances From Node To Neighbours, FORMAT: {'A': {'B': 2, 'C': 4, 'D': 3}, 'B': {'A': 2, 'C': 3, 'D': 6}}
-        startNode: Node where the vehicle is starting, FORMAT: 'A'
-        '''
-
-        unvisited = {node: float('inf') for node in listOfNodes} # Produce a dictionary with listOfNodes and set distance to infinity.
-        print (unvisited)
-        visited = {}
-        current = startNode
-        currentDistance = 0
-        unvisited[current] = currentDistance
-
-        while True:
-            for neighbour, distance in neighbourhood[current].items():
-                if neighbour not in unvisited: continue
-                newDistance = currentDistance + distance
-                if (unvisited[neighbour] == float('inf') or unvisited[neighbour] > newDistance):
-                    unvisited[neighbour] = newDistance
-            visited[current] = currentDistance
-            del unvisited[current]
-            if not unvisited: break
-            candidates = [node for node in unvisited.items() if node[1]]
-            current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
-        return
-
-    def dynamicDijkstra(self, nodes, start, finish):
-        return
-
     def aStar(self, nodes, start, finish):
-
         return
 
     def aStarModified(self, nodes, start, finish):
