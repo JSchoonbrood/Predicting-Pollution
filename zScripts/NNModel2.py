@@ -56,29 +56,28 @@ def Run():
     train1_features = train_df.copy()
     train1_features.pop('Rank')
     train1_labels = train1_features.pop('Rank2')
-    #train1_features.pop('Length')
+    # train1_features.pop('Length')
     train1_features.pop('Length')
 
-    #train_df.pop('Estimated_Travel_Time')
-    #train_df.pop('Total_Neighbours')
-    #train_df.pop('Length')
+    # train_df.pop('Estimated_Travel_Time')
+    # train_df.pop('Total_Neighbours')
+    # train_df.pop('Length')
     train_features = train_df[train_df.Rank2 != 2]
     train_features.pop('Rank2')
     train_features.pop('Total_Neighbours')
     train_labels = train_features.pop('Rank')
-
 
     #########################################################
 
     val1_features = val_df.copy()
     val1_features.pop('Rank')
     val1_labels = val1_features.pop('Rank2')
-    #val1_features.pop('Length')
+    # val1_features.pop('Length')
     val1_features.pop('Length')
 
-    #val_df.pop('Estimated_Travel_Time')
-    #val_df.pop('Total_Neighbours')
-    #val_df.pop('Length')
+    # val_df.pop('Estimated_Travel_Time')
+    # val_df.pop('Total_Neighbours')
+    # val_df.pop('Length')
     val_features = val_df[val_df.Rank2 != 2]
     val_features.pop('Rank2')
     val_features.pop('Total_Neighbours')
@@ -89,18 +88,18 @@ def Run():
     test1_features = test_df.copy()
     test1_features.pop('Rank')
     test1_labels = test1_features.pop('Rank2')
-    #test1_features.pop('Length')
+    # test1_features.pop('Length')
     test1_features.pop('Length')
 
-    #test_df.pop('Estimated_Travel_Time')
-    #test_df.pop('Total_Neighbours')
-    #test_df.pop('Length')
+    # test_df.pop('Estimated_Travel_Time')
+    # test_df.pop('Total_Neighbours')
+    # test_df.pop('Length')
     test_features = test_df[test_df.Rank2 != 2]
     test_features.pop('Rank2')
     test_features.pop('Total_Neighbours')
     test_labels = test_features.pop('Rank')
 
-    print (train_features)
+    print(train_features)
 
     # MODEL (RANKS 1 OR 2(2 IS 8))
 
