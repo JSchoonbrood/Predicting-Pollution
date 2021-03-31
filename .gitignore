@@ -2,4 +2,5 @@ CSV
 OSM
 PROCESSED_CSV
 RANKED_CSV
+TEST_CSV
 ConfusionMatrixes
