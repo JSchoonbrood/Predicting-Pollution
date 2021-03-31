@@ -64,8 +64,6 @@ class runSimulation():
         InitialNode = 129483
         EndNode = 31848
 
-        # print (self.net.getNodes())
-
         with open(self.output_file_name, 'a', newline='') as self.output:
             self.writer = csv.writer(self.output)
 
@@ -77,15 +75,16 @@ class runSimulation():
                     self.addVehicle(VEH_ID)
                     vehicle_spawned = True
 
+                # Code For Updating Routes
                 if (self.step % 20) == 0:
                     for edge in self.edges:
                         self.updateCosts(edge)
+                        self.updateRoute(veh_id)
 
                 if vehicle_spawned:
                     emissions = self.getEmissions(VEH_ID)
                     self.writer.writerow(emissions)
                 break
-
 
 
     def initialRoute(self):
@@ -96,16 +95,8 @@ class runSimulation():
         traci.vehicle.add(veh_id)
         return
 
-    def updateRoute(self):
-        return
-
-    def intervalExec(self):
-        return
-
-    def aStar(self, nodes, start, finish):
-        return
-
-    def aStarModified(self, nodes, start, finish):
+    def updateRoute(self, veh_id):
+        traci.vehicle.rerouteTraveltime(veh_id, currentTravelTimes=False)
         return
 
     def getEdgeList(self):
@@ -117,19 +108,16 @@ class runSimulation():
         length = get_edge.getLength()
 
         speed = traci.edge.getLastStepMeanSpeed(edge_id)
-
         estimated_travel_time = traci.edge.getTraveltime(edge_id)
-
         traffic_level = traci.edge.getLastStepVehicleNumber(edge_id)
 
         prediction = model.predict(speed, estimated_travel_time, traffic_level, "Total_Neighbours", length)
         pollution_class = np.argmax(prediction, axis=1)
-        cost = self.cost[pollution_class]
 
+        cost = self.cost[pollution_class]
         updated_cost = estimated_travel_time + cost
 
         traci.edge.adaptTraveltime(edge_id, updated_cost)
-
         return
 
     def getNodes(self, edge_id):
