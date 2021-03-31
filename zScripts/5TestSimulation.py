@@ -3,7 +3,9 @@ import traci
 import sumolib
 import re
 import configparser
+import tensorflow as tf
 import heapq
+import numpy as np
 
 from pathlib import Path
 from datetime import datetime
@@ -18,6 +20,7 @@ else:
 class runSimulation():
     def __init__(self):
         current_dir = Path(os.path.dirname(__file__))
+        self.model = tf.keras.models.load_model(os.path.join(current_dir, 'Model2'))
         if sys.platform == "linux" or sys.platform == "linux2":
             sim_dir = os.path.join(current_dir.parent, 'OSM/TESTING_SIMS/SUMO_FILES/')
             csv_dir = os.path.join(current_dir.parent, 'TEST_CSV/')
@@ -55,11 +58,11 @@ class runSimulation():
         8 : 45
         }
 
-        VEH_ID = 999999
+        VEH_ID = "999999"
         vehicle_spawned = False
         self.step = 0
-        InitialNode = 129483
-        EndNode = 31848
+        start_edge = "37948285#4"
+        end_edge = "-18651172#2"
 
         with open(self.output_file_name, 'a', newline='') as self.output:
             self.writer = csv.writer(self.output)
@@ -67,29 +70,32 @@ class runSimulation():
             while traci.simulation.getMinExpectedNumber() > 0:
                 traci.simulationStep()
                 self.step += 1
+                print (self.step)
                 if self.step == 300:
-                    self.initialRoute()
-                    self.addVehicle(VEH_ID)
+                    self.addVehicle(VEH_ID, start_edge)
+                    self.initialRoute(VEH_ID, start_edge, end_edge)
                     vehicle_spawned = True
 
                 # Code For Updating Routes
-                if (self.step % 20) == 0:
-                    for edge in self.edges:
-                        self.updateCosts(edge)
-                        self.updateRoute(veh_id)
 
                 if vehicle_spawned:
+                    if (self.step % 20) == 0:
+                        for edge in self.edges:
+                            self.updateCosts(edge)
+                            self.updateRoute(VEH_ID)
+
                     emissions = self.getEmissions(VEH_ID)
                     self.writer.writerow(emissions)
-                break
 
 
-    def initialRoute(self):
-        traci.route.add("InitialRoute", ["Edge1", "Edge2", "Edge3", "Edge4"])
+    def initialRoute(self, VEH_ID, start_edge, end_edge):
+        route = traci.simulation.findRoute(start_edge, end_edge)
+        traci.vehicle.setRoute(VEH_ID, route.edges)
         return
 
-    def addVehicle(self, veh_id):
-        traci.vehicle.add(veh_id)
+    def addVehicle(self, veh_id, start_edge):
+        traci.route.add("InitialRoute", [start_edge])
+        traci.vehicle.add(vehID=veh_id, routeID="InitialRoute")
         return
 
     def updateRoute(self, veh_id):
@@ -108,10 +114,13 @@ class runSimulation():
         estimated_travel_time = traci.edge.getTraveltime(edge_id)
         traffic_level = traci.edge.getLastStepVehicleNumber(edge_id)
 
-        prediction = model.predict(speed, estimated_travel_time, traffic_level, "Total_Neighbours", length)
+        input_data = [speed, estimated_travel_time, traffic_level, length]
+        shaped_data = np.reshape(input_data, (4, 1)).T
+
+        prediction = self.model.predict(shaped_data)
         pollution_class = np.argmax(prediction, axis=1)
 
-        cost = self.cost[pollution_class]
+        cost = self.cost[pollution_class[0]]
         updated_cost = estimated_travel_time + cost
 
         traci.edge.adaptTraveltime(edge_id, updated_cost)
@@ -125,10 +134,13 @@ class runSimulation():
 
     def getEmissions(self, veh_id):
         edge_id = traci.vehicle.getRoadID(veh_id)
-        CO2_Emission = traci.edge.getCO2Emission(edge_id)
-        CO_Emission = traci.edge.getCOEmission(edge_id)
-        HC_Emission = traci.edge.getHCEmission(edge_id)
-        NOx_Emission = traci.edge.getNOxEmission(edge_id)
-        return [CO2_Emission, CO_Emission, HC_Emission, NOx_Emission]
+        if edge_id != '':
+            CO2_Emission = traci.edge.getCO2Emission(edge_id)
+            CO_Emission = traci.edge.getCOEmission(edge_id)
+            HC_Emission = traci.edge.getHCEmission(edge_id)
+            NOx_Emission = traci.edge.getNOxEmission(edge_id)
+            return [CO2_Emission, CO_Emission, HC_Emission, NOx_Emission]
+        else:
+            return [0, 0, 0, 0]
 
 runSimulation()
