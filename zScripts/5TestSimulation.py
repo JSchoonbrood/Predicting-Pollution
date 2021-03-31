@@ -18,14 +18,12 @@ else:
 class runSimulation():
     def __init__(self):
         current_dir = Path(os.path.dirname(__file__))
-        print (current_dir)
         if sys.platform == "linux" or sys.platform == "linux2":
-            sim_dir = os.path.join(current_dir.parent, 'OSM/TRAINING_SIMS/SUMO_FILES/')
-            csv_dir = os.path.join(current_dir.parent, 'CSV/')
+            sim_dir = os.path.join(current_dir.parent, 'OSM/TESTING_SIMS/SUMO_FILES/')
+            csv_dir = os.path.join(current_dir.parent, 'TEST_CSV/')
         elif sys.platform == "win32":
-            sim_dir =  os.path.join(current_dir.parent, 'OSM\\TRAINING_SIMS\\SUMO_FILES\\')
-            print (sim_dir)
-            csv_dir = os.path.join(current_dir.parent, 'CSV\\')
+            sim_dir =  os.path.join(current_dir.parent, 'OSM\\TESTING_SIMS\\SUMO_FILES\\')
+            csv_dir = os.path.join(current_dir.parent, 'TEST_CSV\\')
 
         self.simulationChoice = os.path.join(sim_dir, "map_1.sumocfg")
         self.net = sumolib.net.readNet(os.path.join(sim_dir, "map_1.net.xml"))
@@ -42,7 +40,6 @@ class runSimulation():
         sumoCmd = [sumoBinary, "-c", self.simulationChoice]
 
         traci.start(sumoCmd)
-
 
         self.edges = self.getEdgeList()
         self.edges = [x for x in self.edges if ":" not in x]
