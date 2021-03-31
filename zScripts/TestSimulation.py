@@ -132,10 +132,6 @@ class runSimulation():
 
         return
 
-    def getEdgeList(self):
-        edges = traci.edge.getIDList()
-        return edges
-
     def getNodes(self, edge_id):
         get_nodes = self.net.getEdge(edge_id)
         node_1_id = get_nodes.getFromNode().getID()
