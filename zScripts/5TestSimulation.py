@@ -108,20 +108,19 @@ class runSimulation():
                         if self.step == spawnstep:
                             for edge in self.edges:
                                 self.updateCosts(edge)
-                                self.updateRoute(VEH_ID, False)
+                            self.updateRoute(VEH_ID, False)
                     elif (self.dynamic_dijkstra and self.altered_cost):
-                        if ((self.step % 20) == 0) or (self.step == spawnstep):
+                        if ((self.step % 30) == 0) or (self.step == spawnstep):
+                            print (self.step)
                             for edge in self.edges:
                                 self.updateCosts(edge)
-                                self.updateRoute(VEH_ID, False)
+                            self.updateRoute(VEH_ID, False)
                     elif self.dijkstra:
                         if self.step == spawnstep:
-                            for edge in self.edges:
-                                self.updateRoute(VEH_ID, True)
+                            self.updateRoute(VEH_ID, True)
                     elif self.dynamic_dijkstra:
-                        if ((self.step % 20) == 0) or (self.step == spawnstep):
-                            for edge in self.edges:
-                                self.updateRoute(VEH_ID, True)
+                        if ((self.step % 30) == 0) or (self.step == spawnstep):
+                            self.updateRoute(VEH_ID, True)
 
                     current_edge = traci.vehicle.getRoadID(VEH_ID)
                     if current_edge != end_edge:
@@ -163,7 +162,7 @@ class runSimulation():
         pollution_class = np.argmax(prediction, axis=1)
 
         cost = self.cost[pollution_class[0]]
-        updated_cost = estimated_travel_time + cost
+        updated_cost = 1*(cost*length) + 1*(estimated_travel_time)
 
         traci.edge.adaptTraveltime(edge_id, updated_cost)
         return
