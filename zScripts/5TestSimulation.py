@@ -7,6 +7,7 @@ import tensorflow as tf
 import heapq
 import numpy as np
 
+from random import randint
 from pathlib import Path
 from datetime import datetime
 from threading import Thread
@@ -28,15 +29,40 @@ class runSimulation():
             sim_dir =  os.path.join(current_dir.parent, 'OSM\\TESTING_SIMS\\SUMO_FILES\\')
             csv_dir = os.path.join(current_dir.parent, 'TEST_CSV\\')
 
-        self.simulationChoice = os.path.join(sim_dir, "map_1.sumocfg")
-        self.net = sumolib.net.readNet(os.path.join(sim_dir, "map_1.net.xml"))
-        self.netdict = {}
+        # Run All Tests Without Supervision
+        base = 1
+        self.options = [True, False, True]
+        for i in range(1):
+            mapfile = "map_" + str((base+i))
+            file1 = str(mapfile) + ".sumocfg"
+            file2 = str(mapfile) + ".net.xml"
 
-        now = datetime.now()
-        format_date = str(now.strftime("%x")) + "_" + str(now.strftime("%X")) + "_" + str(now.strftime("%f"))
-        self.output_file_name = csv_dir + format_date.replace("/", "-").replace(":", "-") + ".csv"
+            self.simulationChoice = os.path.join(sim_dir, file1)
+            self.net = sumolib.net.readNet(os.path.join(sim_dir, file2))
+            self.netdict = {}
 
-        self.run()
+            for i in range(4):
+                self.dijkstra = self.options[0]
+                self.dynamic_dijkstra = self.options[1]
+                self.altered_cost = self.options[2]
+
+                if (self.dijkstra and self.altered_cost):
+                    self.output_file_name = csv_dir + mapfile + "_Dijkstra_Altered_Cost.csv"
+                    self.options[0] = False
+                    self.options[1] = True
+                elif (self.dynamic_dijkstra and self.altered_cost):
+                    self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Altered_Cost.csv"
+                    self.options[0] = True
+                    self.options[1] = False
+                    self.options[2] = False
+                elif self.dijkstra:
+                    self.output_file_name = csv_dir + mapfile + "_Dijkstra.csv"
+                    self.options[0] = False
+                    self.options[1] = True
+                elif self.dynamic_dijkstra:
+                    self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra.csv"
+
+                self.run()
 
     def run(self):
         sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin\sumo.exe')
@@ -61,31 +87,51 @@ class runSimulation():
         VEH_ID = "999999"
         vehicle_spawned = False
         self.step = 0
+        spawnstep = 300
         start_edge = "37948285#4"
         end_edge = "-18651172#2"
 
-        with open(self.output_file_name, 'a', newline='') as self.output:
+        with open(self.output_file_name, 'w', newline='') as self.output:
             self.writer = csv.writer(self.output)
 
             while traci.simulation.getMinExpectedNumber() > 0:
                 traci.simulationStep()
                 self.step += 1
-                print (self.step)
-                if self.step == 300:
+
+                if self.step == spawnstep:
                     self.addVehicle(VEH_ID, start_edge)
                     self.initialRoute(VEH_ID, start_edge, end_edge)
                     vehicle_spawned = True
 
-                # Code For Updating Routes
-
                 if vehicle_spawned:
-                    if (self.step % 20) == 0:
-                        for edge in self.edges:
-                            self.updateCosts(edge)
-                            self.updateRoute(VEH_ID)
+                    if (self.dijkstra and self.altered_cost):
+                        if self.step == spawnstep:
+                            for edge in self.edges:
+                                self.updateCosts(edge)
+                                self.updateRoute(VEH_ID, False)
+                    elif (self.dynamic_dijkstra and self.altered_cost):
+                        if ((self.step % 20) == 0) or (self.step == spawnstep):
+                            for edge in self.edges:
+                                self.updateCosts(edge)
+                                self.updateRoute(VEH_ID, False)
+                    elif self.dijkstra:
+                        if self.step == spawnstep:
+                            for edge in self.edges:
+                                self.updateRoute(VEH_ID, True)
+                    elif self.dynamic_dijkstra:
+                        if ((self.step % 20) == 0) or (self.step == spawnstep):
+                            for edge in self.edges:
+                                self.updateRoute(VEH_ID, True)
 
-                    emissions = self.getEmissions(VEH_ID)
-                    self.writer.writerow(emissions)
+                    current_edge = traci.vehicle.getRoadID(VEH_ID)
+                    if current_edge != end_edge:
+                        emissions = self.getEmissions(VEH_ID)
+                        self.writer.writerow(emissions)
+                    else:
+                        traci.close()
+                        break
+
+            self.output.close()
 
 
     def initialRoute(self, VEH_ID, start_edge, end_edge):
@@ -96,10 +142,6 @@ class runSimulation():
     def addVehicle(self, veh_id, start_edge):
         traci.route.add("InitialRoute", [start_edge])
         traci.vehicle.add(vehID=veh_id, routeID="InitialRoute")
-        return
-
-    def updateRoute(self, veh_id):
-        traci.vehicle.rerouteTraveltime(veh_id, currentTravelTimes=False)
         return
 
     def getEdgeList(self):
@@ -124,6 +166,10 @@ class runSimulation():
         updated_cost = estimated_travel_time + cost
 
         traci.edge.adaptTraveltime(edge_id, updated_cost)
+        return
+
+    def updateRoute(self, veh_id, updateTimes):
+        traci.vehicle.rerouteTraveltime(veh_id, currentTravelTimes=updateTimes)
         return
 
     def getNodes(self, edge_id):
