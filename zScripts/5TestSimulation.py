@@ -31,7 +31,8 @@ class runSimulation():
 
         # Run All Tests Without Supervision
         base = 1
-        self.options = [True, False, True]
+        # Dijkstra, DynamicDijkstra, GlobalCost, LocalCost
+        self.options = [True, False, True, False]
         for i in range(1):
             mapfile = "map_" + str((base+i))
             file1 = str(mapfile) + ".sumocfg"
@@ -57,20 +58,30 @@ class runSimulation():
                 self.start_edge = self.start_edges[self.edge_index]
                 self.end_edge = self.end_edges[self.edge_index]
 
-                for i in range(4):
+                for i in range(6):
                     self.dijkstra = self.options[0]
                     self.dynamic_dijkstra = self.options[1]
-                    self.altered_cost = self.options[2]
+                    self.global_cost = self.options[2]
+                    self.local_cost = self.options[3]
 
-                    if (self.dijkstra and self.altered_cost):
-                        self.output_file_name = csv_dir + mapfile + "_Dijkstra_Altered_Cost" + str(i) + str(self.edge_index) + ".csv"
+                    if (self.dijkstra and self.global_cost):
+                        self.output_file_name = csv_dir + mapfile + "_Dijkstra_global_cost" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = False
                         self.options[1] = True
-                    elif (self.dynamic_dijkstra and self.altered_cost):
-                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Altered_Cost" + str(i) + str(self.edge_index) + ".csv"
+                    elif (self.dynamic_dijkstra and self.global_cost):
+                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Global_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.options[2] = False
+                        self.options[3] = True
+                    elif (self.dynamic_dijkstra and self.local_cost):
+                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Local_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.options[0] = True
+                        self.options[1] = False
+                    elif (self.dijkstra and self.local_cost):
+                        self.output_file_name = csv_dir + mapfile + "_Dijkstra_Local_Cost" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = True
                         self.options[1] = False
                         self.options[2] = False
+                        self.options[3] = False
                     elif self.dijkstra:
                         self.output_file_name = csv_dir + mapfile + "_Dijkstra" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = False
@@ -87,7 +98,6 @@ class runSimulation():
                     self.edgeGenerator()
                     self.tripped1 = ""
                     self.tripped2 = ""
-
 
 
     def run(self):
@@ -141,17 +151,29 @@ class runSimulation():
                         vehicle_spawned = True
 
                 if vehicle_spawned:
-                    if (self.dijkstra and self.altered_cost):
-                        print ("Dijkstra & Altered Cost")
+                    if (self.dijkstra and self.global_cost):
+                        print ("Dijkstra & Global Cost")
                         if self.step == spawnstep:
                             for edge in self.edges:
                                 self.updateCosts(edge)
                             self.updateRoute(VEH_ID, False)
-                    elif (self.dynamic_dijkstra and self.altered_cost):
-                        print ("Dynamic Dijkstra & Altered Cost")
+                    elif (self.dynamic_dijkstra and self.global_cost):
+                        print ("Dynamic Dijkstra & Global Cost")
                         if ((self.step % 60) == 0) or (self.step == spawnstep):
                             for edge in self.edges:
                                 self.updateCosts(edge)
+                            self.updateRoute(VEH_ID, False)
+                    elif (self.dynamic_dijkstra and self.local_cost):
+                        print ("Dynamic Dijkstra & Local Cost")
+                        if ((self.step % 60) == 0) or (self.step == spawnstep):
+                            for edge in self.edges:
+                                self.updatelocalCosts(edge)
+                            self.updateRoute(VEH_ID, False)
+                    elif (self.dijkstra and self.local_cost):
+                        print ("Dijkstra & Local Cost")
+                        if self.step == spawnstep:
+                            for edge in self.edges:
+                                self.updatelocalCosts(edge)
                             self.updateRoute(VEH_ID, False)
                     elif self.dijkstra:
                         print ("Dijkstra")
@@ -210,6 +232,17 @@ class runSimulation():
     def getEdgeList(self):
         edges = traci.edge.getIDList()
         return edges
+
+    def updatelocalCosts(self, edge_id):
+        get_edge = self.net.getEdge(edge_id)
+        length = get_edge.getLength()
+
+        traffic_level = traci.edge.getLastStepVehicleNumber(edge_id)
+
+        cost = 0.1*(traffic_level*estimated_travel_time) + 1*(estimated_travel_time)
+
+        traci.edge.adaptTravelTime(edge_id, cost)
+        return
 
     def updateCosts(self, edge_id):
         get_edge = self.net.getEdge(edge_id)
