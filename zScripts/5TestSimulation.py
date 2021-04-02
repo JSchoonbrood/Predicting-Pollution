@@ -41,28 +41,54 @@ class runSimulation():
             self.net = sumolib.net.readNet(os.path.join(sim_dir, file2))
             self.netdict = {}
 
-            for i in range(4):
-                self.dijkstra = self.options[0]
-                self.dynamic_dijkstra = self.options[1]
-                self.altered_cost = self.options[2]
+            self.edges = self.net.getEdges()
+            for i in range(len(self.edges)):
+                self.edges[i] = self.edges[i].getID()
+            self.edges = [x for x in self.edges if ":" not in x]
 
-                if (self.dijkstra and self.altered_cost):
-                    self.output_file_name = csv_dir + mapfile + "_Dijkstra_Altered_Cost.csv"
-                    self.options[0] = False
-                    self.options[1] = True
-                elif (self.dynamic_dijkstra and self.altered_cost):
-                    self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Altered_Cost.csv"
-                    self.options[0] = True
-                    self.options[1] = False
-                    self.options[2] = False
-                elif self.dijkstra:
-                    self.output_file_name = csv_dir + mapfile + "_Dijkstra.csv"
-                    self.options[0] = False
-                    self.options[1] = True
-                elif self.dynamic_dijkstra:
-                    self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra.csv"
+            self.start_edges = []
+            self.end_edges = []
 
-                self.run()
+            for i in range(10):
+                self.edgeGenerator()
+
+
+            for self.edge_index in range(len(self.start_edges)):
+                self.start_edge = self.start_edges[self.edge_index]
+                self.end_edge = self.end_edges[self.edge_index]
+
+                for i in range(4):
+                    self.dijkstra = self.options[0]
+                    self.dynamic_dijkstra = self.options[1]
+                    self.altered_cost = self.options[2]
+
+                    if (self.dijkstra and self.altered_cost):
+                        self.output_file_name = csv_dir + mapfile + "_Dijkstra_Altered_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.options[0] = False
+                        self.options[1] = True
+                    elif (self.dynamic_dijkstra and self.altered_cost):
+                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Altered_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.options[0] = True
+                        self.options[1] = False
+                        self.options[2] = False
+                    elif self.dijkstra:
+                        self.output_file_name = csv_dir + mapfile + "_Dijkstra" + str(i) + str(self.edge_index) + ".csv"
+                        self.options[0] = False
+                        self.options[1] = True
+                    elif self.dynamic_dijkstra:
+                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra" + str(i) + str(self.edge_index) + ".csv"
+                        self.options[0] = True
+                        self.options[1] = False
+                        self.options[2] = True
+
+                    self.run()
+
+                if (self.tripped1 or self.tripped2) == "Error":
+                    self.edgeGenerator()
+                    self.tripped1 = ""
+                    self.tripped2 = ""
+
+
 
     def run(self):
         sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin\sumo.exe')
@@ -70,8 +96,15 @@ class runSimulation():
 
         traci.start(sumoCmd)
 
-        self.edges = self.getEdgeList()
-        self.edges = [x for x in self.edges if ":" not in x]
+        route_found = False
+        while not route_found:
+            try:
+                self.verifyRoute(self.start_edge, self.end_edge)
+                route_found = True
+            except:
+                self.edgeGenerator(override=True)
+                self.start_edge = self.start_edges[self.edge_index]
+                self.end_edge = self.end_edges[self.edge_index]
 
         self.cost = {
         1 : 10,
@@ -86,10 +119,10 @@ class runSimulation():
 
         VEH_ID = "999999"
         vehicle_spawned = False
-        self.step = 0
-        spawnstep = 300
-        start_edge = "37948285#4"
-        end_edge = "-18651172#2"
+        self.step = traci.simulation.getTime()
+        spawnstep = self.step + 500
+        print ("\n" + self.start_edge)
+        print (self.end_edge)
 
         with open(self.output_file_name, 'w', newline='') as self.output:
             self.writer = csv.writer(self.output)
@@ -99,31 +132,42 @@ class runSimulation():
                 self.step += 1
 
                 if self.step == spawnstep:
-                    self.addVehicle(VEH_ID, start_edge)
-                    self.initialRoute(VEH_ID, start_edge, end_edge)
-                    vehicle_spawned = True
+                    self.tripped1 = self.addVehicle(VEH_ID, self.start_edge)
+                    self.tripped2 = self.initialRoute(VEH_ID, self.start_edge, self.end_edge)
+                    if (self.tripped1 or self.tripped2) == "Error":
+                        traci.close()
+                        break
+                    else:
+                        vehicle_spawned = True
 
                 if vehicle_spawned:
                     if (self.dijkstra and self.altered_cost):
+                        print ("Dijkstra & Altered Cost")
                         if self.step == spawnstep:
                             for edge in self.edges:
                                 self.updateCosts(edge)
                             self.updateRoute(VEH_ID, False)
                     elif (self.dynamic_dijkstra and self.altered_cost):
-                        if ((self.step % 30) == 0) or (self.step == spawnstep):
-                            print (self.step)
+                        print ("Dynamic Dijkstra & Altered Cost")
+                        if ((self.step % 60) == 0) or (self.step == spawnstep):
                             for edge in self.edges:
                                 self.updateCosts(edge)
                             self.updateRoute(VEH_ID, False)
                     elif self.dijkstra:
+                        print ("Dijkstra")
                         if self.step == spawnstep:
                             self.updateRoute(VEH_ID, True)
                     elif self.dynamic_dijkstra:
-                        if ((self.step % 30) == 0) or (self.step == spawnstep):
+                        print ("Dynamic Dijkstra")
+                        if ((self.step % 60) == 0) or (self.step == spawnstep):
                             self.updateRoute(VEH_ID, True)
+                    try:
+                        current_edge = traci.vehicle.getRoadID(VEH_ID)
+                    except traci.exceptions.TraCIException:
+                        traci.close()
+                        break
 
-                    current_edge = traci.vehicle.getRoadID(VEH_ID)
-                    if current_edge != end_edge:
+                    if current_edge != self.end_edge:
                         emissions = self.getEmissions(VEH_ID)
                         self.writer.writerow(emissions)
                     else:
@@ -132,6 +176,23 @@ class runSimulation():
 
             self.output.close()
 
+    def edgeGenerator(self, override=False):
+        edge_1 = randint(0, len(self.edges))
+        edge_2 = randint(0, len(self.edges))
+
+        if override == True:
+            self.start_edges[self.edge_index] = self.edges[edge_1]
+            self.end_edges[self.edge_index] = self.edges[edge_2]
+        else:
+            self.start_edges.append(self.edges[edge_1])
+            self.end_edges.append(self.edges[edge_2])
+        return
+
+    def verifyRoute(self, start_edge, end_edge):
+        route = traci.simulation.findRoute(start_edge, end_edge)
+        if route.edges == ():
+            raise RoutingError()
+        return
 
     def initialRoute(self, VEH_ID, start_edge, end_edge):
         route = traci.simulation.findRoute(start_edge, end_edge)
@@ -140,7 +201,10 @@ class runSimulation():
 
     def addVehicle(self, veh_id, start_edge):
         traci.route.add("InitialRoute", [start_edge])
-        traci.vehicle.add(vehID=veh_id, routeID="InitialRoute")
+        try:
+            traci.vehicle.add(vehID=veh_id, routeID="InitialRoute")
+        except traci.exceptions.TraCIException:
+            return "Error"
         return
 
     def getEdgeList(self):
