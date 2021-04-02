@@ -65,29 +65,29 @@ class runSimulation():
                     self.local_cost = self.options[3]
 
                     if (self.dijkstra and self.global_cost):
-                        self.output_file_name = csv_dir + mapfile + "_Dijkstra_global_cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.output_file_name = csv_dir + mapfile + "_SDGC_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = False
                         self.options[1] = True
                     elif (self.dynamic_dijkstra and self.global_cost):
-                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Global_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.output_file_name = csv_dir + mapfile + "_DDGC_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[2] = False
                         self.options[3] = True
                     elif (self.dynamic_dijkstra and self.local_cost):
-                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra_Local_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.output_file_name = csv_dir + mapfile + "_DDLC_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = True
                         self.options[1] = False
                     elif (self.dijkstra and self.local_cost):
-                        self.output_file_name = csv_dir + mapfile + "_Dijkstra_Local_Cost" + str(i) + str(self.edge_index) + ".csv"
+                        self.output_file_name = csv_dir + mapfile + "_SDLC_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = True
                         self.options[1] = False
                         self.options[2] = False
                         self.options[3] = False
                     elif self.dijkstra:
-                        self.output_file_name = csv_dir + mapfile + "_Dijkstra" + str(i) + str(self.edge_index) + ".csv"
+                        self.output_file_name = csv_dir + mapfile + "_D_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = False
                         self.options[1] = True
                     elif self.dynamic_dijkstra:
-                        self.output_file_name = csv_dir + mapfile + "_DynamicDijkstra" + str(i) + str(self.edge_index) + ".csv"
+                        self.output_file_name = csv_dir + mapfile + "_DD_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = True
                         self.options[1] = False
                         self.options[2] = True
