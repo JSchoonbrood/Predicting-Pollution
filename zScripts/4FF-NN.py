@@ -7,6 +7,7 @@ import sys
 from tensorflow.keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.layers import BatchNormalization, Flatten, Dropout
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from matplotlib import pyplot
 from pathlib import Path
 
@@ -107,12 +108,10 @@ def Run():
     model1.add(Dense(5, input_dim=4))
     model1.add(BatchNormalization())
 
-    model1.add(Dense(64,  activation='relu'))
-    model1.add(BatchNormalization())
+    model1.add(Dense(10,  activation='relu'))
     model1.add(Dropout(0.25))
 
-    model1.add(Dense(64,  activation='relu'))
-    model1.add(BatchNormalization())
+    model1.add(Dense(25,  activation='relu'))
     model1.add(Dropout(0.25))
 
     model1.add(Flatten())
@@ -125,11 +124,11 @@ def Run():
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     model1.compile(optimizer=opt, loss=loss, metrics=['accuracy'])
 
-    history = model1.fit(train1_features, train1_labels, epochs=10,
-                         batch_size=30)
+    history = model1.fit(train1_features, train1_labels, epochs=25,
+                         batch_size=80)
     eval = model1.evaluate(val1_features, val1_labels)
 
-    y_actual = []
+    '''y_actual = []
     y_pred = []
     for i in range(5000):
         test_data = test1_features.iloc[i].values.tolist()
@@ -150,7 +149,7 @@ def Run():
     conf_matrix = pd.crosstab(pd.Series(y_actual), pd.Series(y_pred),
                               rownames=['Actual'], colnames=['Predicted'],
                               margins=True)
-    conf_matrix.to_html(conf_matrix_file_html)
+    conf_matrix.to_html(conf_matrix_file_html)'''
 
     # MODEL (RANKS 1-7)
 
@@ -158,17 +157,17 @@ def Run():
     model2.add(Dense(5, input_dim=4))
     model2.add(BatchNormalization())
 
-    model2.add(Dense(64,  activation='relu'))
-    model2.add(BatchNormalization())
-    model2.add(Dropout(0.25))
+    model2.add(Dense(10,  activation='relu'))
+    #model2.add(BatchNormalization())
+    #model2.add(Dropout(0.25))
 
-    model2.add(Dense(128,  activation='relu'))
-    model2.add(BatchNormalization())
-    model2.add(Dropout(0.25))
+    model2.add(Dense(20,  activation='relu'))
+    #model2.add(BatchNormalization())
+    #model2.add(Dropout(0.25))
 
-    model2.add(Dense(128,  activation='relu'))
-    model2.add(BatchNormalization())
-    model2.add(Dropout(0.25))
+    model2.add(Dense(15,  activation='relu'))
+    #model2.add(BatchNormalization())
+    #model2.add(Dropout(0.25))
 
     model2.add(Flatten())
     model2.add(Dense(9, activation='softmax'))
@@ -180,10 +179,10 @@ def Run():
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     model2.compile(optimizer=opt, loss=loss, metrics=['accuracy'])
 
-    history = model2.fit(train_features, train_labels, epochs=30, batch_size=30)
+    history = model2.fit(train_features, train_labels, epochs=60, batch_size=120)
     eval = model2.evaluate(val_features, val_labels)
 
-    model2.save(os.path.join(current_dir, 'Model2'))
+    model2.save(os.path.join(current_dir, 'Model2-5'))
 
     # model.save('PollutionPrediction.model')
 
