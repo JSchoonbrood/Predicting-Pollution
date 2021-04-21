@@ -14,6 +14,12 @@ def run():
         data_dir = os.path.join(current_dir.parent, 'TEST_CSV\\')
 
     test_files = os.listdir(data_dir)
+    print (test_files)
+    for i in range(len(test_files)):
+        if test_files[i] == "map_1_DDGC_13.csv":
+            del test_files[i]
+            break
+
 
     dataframes = []
     for fname in test_files:
@@ -21,6 +27,24 @@ def run():
             pass
         else:
             data = pd.read_csv(os.path.join(data_dir, fname))
+
+            name = fname
+            name = name.split("_")
+            code = name[2]
+
+            if code == "SDGC":
+                data.name = "SDGC"
+            elif code == "DDGC":
+                data.name = "DDGC"
+            elif code == "SDLC":
+                data.name = "SDLC"
+            elif code == "DDLC":
+                data.name = "DDLC"
+            elif code == "DD":
+                data.name = "DD"
+            elif code == "D":
+                data.name = "D"
+
             dataframes.append(data)
 
     dijkstra = []
@@ -30,26 +54,23 @@ def run():
     static_global = []
     dynamic_global = []
     for df in dataframes:
-        p1 = df.sum(axis=0, skipna=True)
-        p2 = df.sum(axis=1, skipna=True)
-        p3 = df.sum(axis=2, skipna=True)
-        p4 = df.sum(axis=3, skipna=True)
-        total = p1 + p2 + p3 + p4
+        p1 = df.sum(axis=1, skipna=True)
+        total = 0
+        for i in p1:
+            total += i
         name = df.name
-        name = name.split("_")
-        code = name[1]
 
-        if code == "SDGC":
+        if name == "SDGC":
             static_global.append(total)
-        elif code == "DDGC":
+        elif name == "DDGC":
             dynamic_global.append(total)
-        elif code == "SDLC":
+        elif name == "SDLC":
             static_local.append(total)
-        elif code == "DDLC":
+        elif name == "DDLC":
             dynamic_local.append(total)
-        elif code == "DD":
+        elif name == "DD":
             dynamic_dijkstra.append(total)
-        elif code == "D":
+        elif name == "D":
             dijkstra.append(total)
 
     names = ["Dij", "Dyn_Dij", "Stat_Dij_Local", "Dyn_Dij_Local", "Stat_Dij_Global", "Dyn_Dij_Global"]
@@ -62,3 +83,5 @@ def run():
         average = sum/len(data)
         print (names[index], average)
         index += 1
+
+run()

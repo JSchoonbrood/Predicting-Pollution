@@ -58,7 +58,7 @@ def Run():
     train1_features.pop('Rank')
     train1_labels = train1_features.pop('Rank2')
     # train1_features.pop('Length')
-    train1_features.pop('Length')
+    train1_features.pop('Total_Neighbours')
 
     # train_df.pop('Estimated_Travel_Time')
     # train_df.pop('Total_Neighbours')
@@ -74,7 +74,7 @@ def Run():
     val1_features.pop('Rank')
     val1_labels = val1_features.pop('Rank2')
     # val1_features.pop('Length')
-    val1_features.pop('Length')
+    val1_features.pop('Total_Neighbours')
 
     # val_df.pop('Estimated_Travel_Time')
     # val_df.pop('Total_Neighbours')
@@ -90,7 +90,7 @@ def Run():
     test1_features.pop('Rank')
     test1_labels = test1_features.pop('Rank2')
     # test1_features.pop('Length')
-    test1_features.pop('Length')
+    test1_features.pop('Total_Neighbours')
 
     # test_df.pop('Estimated_Travel_Time')
     # test_df.pop('Total_Neighbours')
@@ -128,6 +128,8 @@ def Run():
                          batch_size=80)
     eval = model1.evaluate(val1_features, val1_labels)
 
+    model1.save(os.path.join(current_dir, 'Model1'))
+
     '''y_actual = []
     y_pred = []
     for i in range(5000):
@@ -164,6 +166,8 @@ def Run():
     model2.add(Dense(20,  activation='relu'))
     #model2.add(BatchNormalization())
     #model2.add(Dropout(0.25))
+
+    model2.add(Dense(20,  activation='relu'))
 
     model2.add(Dense(15,  activation='relu'))
     #model2.add(BatchNormalization())
