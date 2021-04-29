@@ -258,9 +258,7 @@ class runSimulation():
 
         estimated_travel_time = traci.edge.getTraveltime(edge_id)
 
-        traffic_level = traci.edge.getLastStepVehicleNumber(edge_id)
-
-        cost = 0.1*(traffic_level*estimated_travel_time) + 1*(estimated_travel_time)
+        cost = (estimated_travel_time)
 
         traci.edge.adaptTraveltime(edge_id, cost)
         return
