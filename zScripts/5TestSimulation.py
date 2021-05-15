@@ -21,8 +21,11 @@ else:
 class runSimulation():
     def __init__(self):
         current_dir = Path(os.path.dirname(__file__))
-        self.model1 = tf.keras.models.load_model(os.path.join(current_dir, 'Model1'))
-        self.model2 = tf.keras.models.load_model(os.path.join(current_dir, 'Model2-5'))
+        self.rank1id = tf.keras.models.load_model(os.path.join(current_dir, 'rank1identifier.h5'))
+        self.rank2id = tf.keras.models.load_model(os.path.join(current_dir, 'rank2identifier.h5'))
+        self.rank4id = tf.keras.models.load_model(os.path.join(current_dir, 'rank4identifier.h5'))
+        #self.model1 = tf.keras.models.load_model(os.path.join(current_dir, 'Model1'))
+        #self.model2 = tf.keras.models.load_model(os.path.join(current_dir, 'Model2-5'))
         if sys.platform == "linux" or sys.platform == "linux2":
             sim_dir = os.path.join(current_dir.parent, 'OSM/TESTING_SIMS/SUMO_FILES/')
             csv_dir = os.path.join(current_dir.parent, 'TEST_CSV/')
@@ -42,11 +45,18 @@ class runSimulation():
             self.simulationChoice = os.path.join(sim_dir, file1)
             self.net = sumolib.net.readNet(os.path.join(sim_dir, file2))
             self.netdict = {}
+            self.neighbours = {}
 
             self.edges = self.net.getEdges()
             for i in range(len(self.edges)):
+                #self.neighbours[self.edges[i]] = self.calculateNeighbours(self.edges[i])
                 self.edges[i] = self.edges[i].getID()
             self.edges = [x for x in self.edges if ":" not in x]
+
+            for i in self.edges:
+                self.neighbours[i] = self.calculateNeighbours(i)
+
+            self.rank_log = {i for i in self.edges}
 
             self.start_edges = []
             self.end_edges = []
@@ -57,13 +67,9 @@ class runSimulation():
 
             self.cost = {
             1 : 0,
-            2 : 10,
-            3 : 20,
-            4 : 25,
-            5 : 30,
-            6 : 35,
-            7 : 50,
-            8 : 60
+            2 : 5,
+            3 : 10,
+            4 : 15,
             }
 
             for self.edge_index in range(len(self.start_edges)):
@@ -113,7 +119,11 @@ class runSimulation():
 
 
     def run(self):
-        sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin\sumo.exe')
+        if sys.platform == "linux" or sys.platform == "linux2":
+            sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin/sumo')
+        elif sys.platform == "win32":
+            sumoBinary = os.path.join(os.environ['SUMO_HOME'], r'bin\sumo.exe')
+
         sumoCmd = [sumoBinary, "-c", self.simulationChoice]
 
         traci.start(sumoCmd)
@@ -255,11 +265,8 @@ class runSimulation():
     def updatelocalCosts(self, edge_id):
         get_edge = self.net.getEdge(edge_id)
         length = get_edge.getLength()
-
         estimated_travel_time = traci.edge.getTraveltime(edge_id)
-
         cost = (estimated_travel_time)
-
         traci.edge.adaptTraveltime(edge_id, cost)
         return
 
@@ -269,23 +276,51 @@ class runSimulation():
 
         speed = traci.edge.getLastStepMeanSpeed(edge_id)
         estimated_travel_time = traci.edge.getTraveltime(edge_id)
+        total_neighbours = self.neighbours[edge_id]
         traffic_level = traci.edge.getLastStepVehicleNumber(edge_id)
 
-        input_data = [speed, estimated_travel_time, traffic_level, length]
+        input_data = [speed, estimated_travel_time, total_neighbours, length]
         shaped_data = np.reshape(input_data, (4, 1)).T
 
-        prediction1 = self.model1.predict(shaped_data)
-        pollution_class = np.argmax(prediction1, axis=1)
-        if pollution_class[0] != 2:
-            prediction = self.model2.predict(shaped_data)
-            pollution_class = np.argmax(prediction, axis=1)
-        else:
-            pollution_class = [8]
+        current_rank = self.rank_log[edge_id]
+        if current_rank[1] = 3:
+            current_rank[0] = 9
+            current_rank[1] = 0
 
-        cost = self.cost[pollution_class[0]]
+        rank1pred = self.rank1id.predict(test_data)
+        prediction = np.argmax(rank1pred, axis=1)
+
+        if prediction[0] == 1:
+            pollution_class = 1
+            if current_rank[1] < 2:
+                if prediction[0] <= current_rank[0]:
+                    pollution_class = current_rank[0]
+        else:
+            rank2pred = self.rank2id.predict(test_data)
+            prediction = np.argmax(rank2pred, axis=1)
+            if prediction[0] == 1:
+                pollution_class = 2
+                if current_rank[1] < 2:
+                    if prediction[0] <= current_rank[0]:
+                        pollution_class = current_rank[0]
+            else:
+                rank4pred = self.rank4id.predict(test_data)
+                prediction = np.argmax(rank4pred, axis=1)
+                if prediction[0] == 1:
+                    pollution_class = 4
+                    if current_rank[1] < 2:
+                        if prediction[0] <= current_rank[0]:
+                            pollution_class = current_rank[0]
+                else:
+                    pollution_class = 3
+
+        cost = self.cost[pollution_class]
         updated_cost = 1*(cost*estimated_travel_time) + 1*(estimated_travel_time)
 
         traci.edge.adaptTraveltime(edge_id, updated_cost)
+
+        current_rank = [pollution_class, (current_rank[1]+1)]
+        self.rank_log[get_edge] = current_rank
         return
 
     def updateRoute(self, veh_id, updateTimes):
@@ -338,5 +373,19 @@ class runSimulation():
 
         print ("\nInterval -> ", interval)
         return interval
+
+    def calculateNeighbours(self, edge_id):
+        get_edge = self.net.getEdge(edge_id)
+        node_1_id = get_edge.getFromNode().getID()
+        node_2_id = get_edge.getToNode().getID()
+        node_1_coord = self.net.getNode(node_1_id).getCoord()
+        node_2_coord = self.net.getNode(node_2_id).getCoord()
+        node_1_ne = self.net.getNeighboringEdges(node_1_coord[0],
+                                                 node_1_coord[1], r=0.0001)
+        node_2_ne = self.net.getNeighboringEdges(node_2_coord[0],
+                                                 node_2_coord[1], r=0.0001)
+        node_1_ne = len(node_1_ne)
+        node_2_ne = len(node_2_ne)
+        return (int(node_1_ne) + int(node_2_ne))
 
 runSimulation()
