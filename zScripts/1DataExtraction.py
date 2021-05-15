@@ -27,7 +27,7 @@ class runSimulation():
             csv_dir = os.path.join(current_dir.parent, 'CSV\\')
 
         # Automated Process To Process Multiple Simulations
-        base = 12
+        base = 1
         for i in range(2):
             mapfile = "map_" + str((base+i))
             file1 = str(mapfile) + ".sumocfg"

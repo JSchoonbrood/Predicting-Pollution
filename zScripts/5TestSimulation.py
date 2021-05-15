@@ -53,8 +53,8 @@ class runSimulation():
                 self.edges[i] = self.edges[i].getID()
             self.edges = [x for x in self.edges if ":" not in x]
 
-            for i in self.edges:
-                self.neighbours[i] = self.calculateNeighbours(i)
+            #for i in self.edges:
+            #    self.neighbours[i] = self.calculateNeighbours(i)
 
             self.rank_log = {i for i in self.edges}
 
@@ -134,6 +134,10 @@ class runSimulation():
         spawnstep = self.step + 500
         dynamic_interval = 25
         initialRoute = False
+        self.edges2 = traci.edge.getIDList()
+        self.edges2 = [x for x in self.edges2 if ":" not in x]
+        for edge in self.edges2:
+            self.neighbours[edge] = self.calculateNeighbours(edge)
 
         route_found = False
         while not route_found:
@@ -162,16 +166,12 @@ class runSimulation():
                         vehicle_spawned = True
 
                 if vehicle_spawned:
-
-
                     if (self.dijkstra and self.global_cost):
                         print ("Dijkstra & Global Cost")
                         if self.step == spawnstep:
                             for edge in self.edges:
                                 self.updateCosts(edge)
                             self.updateRoute(VEH_ID, False)
-
-
                     elif (self.dynamic_dijkstra and self.global_cost):
                         print ("Dynamic Dijkstra & Global Cost")
                         if (traci.vehicle.getRoadID(VEH_ID) != "") and (initialRoute == False):
@@ -190,8 +190,6 @@ class runSimulation():
                                     self.dynamic_interval = self.intervalUpdater(distance)
                                     print ("\nEdge ->", traci.vehicle.getRoadID(VEH_ID))
                                     print ("\nDistance -> ", distance)
-
-
                     elif (self.dynamic_dijkstra and self.local_cost):
                         print ("Dynamic Dijkstra & Local Cost")
                         if ((self.step % 25) == 0) or (self.step == spawnstep):
@@ -283,7 +281,7 @@ class runSimulation():
         shaped_data = np.reshape(input_data, (4, 1)).T
 
         current_rank = self.rank_log[edge_id]
-        if current_rank[1] = 3:
+        if current_rank[1] == 3:
             current_rank[0] = 9
             current_rank[1] = 0
 
@@ -307,7 +305,7 @@ class runSimulation():
                 rank4pred = self.rank4id.predict(test_data)
                 prediction = np.argmax(rank4pred, axis=1)
                 if prediction[0] == 1:
-                    pollution_class = 4
+                    pollution_class == 4
                     if current_rank[1] < 2:
                         if prediction[0] <= current_rank[0]:
                             pollution_class = current_rank[0]
@@ -379,9 +377,10 @@ class runSimulation():
         node_1_id = get_edge.getFromNode().getID()
         node_2_id = get_edge.getToNode().getID()
         node_1_coord = self.net.getNode(node_1_id).getCoord()
+        node_1_coord = self.net.convertLonLatXY2(node_1_coord[0], node_1_coord[1])
+        print (node_1_coord)
         node_2_coord = self.net.getNode(node_2_id).getCoord()
-        node_1_ne = self.net.getNeighboringEdges(node_1_coord[0],
-                                                 node_1_coord[1], r=0.0001)
+        node_1_ne = self.net.getNeighboringEdges(node_1_coord, r=0.0001)
         node_2_ne = self.net.getNeighboringEdges(node_2_coord[0],
                                                  node_2_coord[1], r=0.0001)
         node_1_ne = len(node_1_ne)
