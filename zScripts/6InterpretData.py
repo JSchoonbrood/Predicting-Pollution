@@ -15,10 +15,10 @@ def run():
 
     test_files = os.listdir(data_dir)
     print (test_files)
-    for i in range(len(test_files)):
-        if test_files[i] == "map_1_DDGC_13.csv":
-            del test_files[i]
-            break
+    #for i in range(len(test_files)):
+    #    if test_files[i] == "map_1_DDGC_19.csv":
+    #        del test_files[i]
+    #        break
 
 
     dataframes = []
