@@ -35,8 +35,8 @@ class runSimulation():
 
         # Run All Tests Without Supervision
         base = 1
-        # Dijkstra, DynamicDijkstra, GlobalCost, LocalCost
-        self.options = [True, False, True, False]
+        # Dijkstra, DynamicDijkstra, GlobalCost
+        self.options = [True, False, True]
         for i in range(1):
             mapfile = "map_" + str((base+i)) # Identifies which map to run tests on automatically
             file1 = str(mapfile) + ".sumocfg"
@@ -72,9 +72,9 @@ class runSimulation():
             # Contains cost for each pollution class
             self.cost = {
             1 : 1,
-            2 : 1.2,
-            3 : 1.5,
-            4 : 2,
+            2 : 1.5,
+            3 : 2,
+            4 : 5,
             }
 
             for i in range(10):
@@ -86,11 +86,10 @@ class runSimulation():
                 self.end_edge = self.end_edges[self.edge_index]
 
                 # Run simulation multiple times for each possible routing method
-                for i in range(6):
+                for i in range(4):
                     self.dijkstra = self.options[0]
                     self.dynamic_dijkstra = self.options[1]
                     self.global_cost = self.options[2]
-                    self.local_cost = self.options[3]
 
                     if (self.dijkstra and self.global_cost):
                         self.output_file_name = csv_dir + mapfile + "_SDGC_" + str(i) + str(self.edge_index) + ".csv"
@@ -98,18 +97,9 @@ class runSimulation():
                         self.options[1] = True
                     elif (self.dynamic_dijkstra and self.global_cost):
                         self.output_file_name = csv_dir + mapfile + "_DDGC_" + str(i) + str(self.edge_index) + ".csv"
-                        self.options[2] = False
-                        self.options[3] = True
-                    elif (self.dynamic_dijkstra and self.local_cost):
-                        self.output_file_name = csv_dir + mapfile + "_DDLC_" + str(i) + str(self.edge_index) + ".csv"
-                        self.options[0] = True
-                        self.options[1] = False
-                    elif (self.dijkstra and self.local_cost):
-                        self.output_file_name = csv_dir + mapfile + "_SDLC_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = True
                         self.options[1] = False
                         self.options[2] = False
-                        self.options[3] = False
                     elif self.dijkstra:
                         self.output_file_name = csv_dir + mapfile + "_D_" + str(i) + str(self.edge_index) + ".csv"
                         self.options[0] = False
@@ -120,7 +110,11 @@ class runSimulation():
                         self.options[1] = False
                         self.options[2] = True
 
-                    self.run()
+                    final_edges = self.run()
+                    with open((csv_dir+mapfile+'edgesused.csv'), 'a', newline='') as edgeOutput:
+                        edgewriter = csv.writer(edgeOutput)
+                        edgewriter.writerow(final_edges)
+                    edgeOutput.close()
 
                 # Used to catch errors from edge generator as valid routes can only be determined when the simulation attempts to add vehicle
                 if (self.tripped1 or self.tripped2) == "Error":
@@ -148,7 +142,7 @@ class runSimulation():
         self.step = traci.simulation.getTime() # Current step
         self.previousDistance = 99999
         spawnstep = self.step + 500 # What step to spawn the vehicle
-        dynamic_interval = 25 # How often a route should be updated, changes during simulation
+        self.dynamic_interval = 25 # How often a route should be updated, changes during simulation
         initialRoute = False
         route_found = False # Used to determine if route is real
 
@@ -198,7 +192,7 @@ class runSimulation():
                             distance = self.getDistance(VEH_ID, self.end_edge)
                             self.dynamic_interval = self.intervalUpdater(distance)
                         elif (traci.vehicle.getRoadID(VEH_ID) != "") and (initialRoute == True):
-                            if ((self.step % self.dynamic_interval) == 0):
+                            if ((self.step % 25) == 0): #self.dynamic_interval instead of 25
                                 print (self.rank_log)
                                 for edge in self.edges:
                                     self.updateCosts(edge)
@@ -207,18 +201,6 @@ class runSimulation():
                                 self.dynamic_interval = self.intervalUpdater(distance)
                                 print ("\nEdge ->", traci.vehicle.getRoadID(VEH_ID))
                                 print ("\nDistance -> ", distance)
-                    elif (self.dynamic_dijkstra and self.local_cost):
-                        print ("\nDynamic Dijkstra & Local Cost")
-                        if ((self.step % 25) == 0) or (self.step == spawnstep):
-                            for edge in self.edges:
-                                self.updatelocalCosts(edge)
-                            self.updateRoute(VEH_ID, False)
-                    elif (self.dijkstra and self.local_cost):
-                        print ("\nDijkstra & Local Cost")
-                        if self.step == spawnstep:
-                            for edge in self.edges:
-                                self.updatelocalCosts(edge)
-                            self.updateRoute(VEH_ID, False)
                     elif self.dijkstra:
                         print ("\nDijkstra")
                         if self.step == spawnstep:
@@ -241,6 +223,8 @@ class runSimulation():
                         break
 
             self.output.close()
+
+            return [self.start_edge, self.end_edge]
 
     def edgeGenerator(self, override=False):
         'Generates start and end edges randomly'
@@ -282,14 +266,6 @@ class runSimulation():
         edges = traci.edge.getIDList()
         return edges
 
-    def updatelocalCosts(self, edge_id):
-        'Simple cost function for rerouting vehicles dynamically / statically'
-        get_edge = self.net.getEdge(edge_id)
-        length = get_edge.getLength()
-        estimated_travel_time = traci.edge.getTraveltime(edge_id)
-        cost = (estimated_travel_time)
-        traci.edge.adaptTraveltime(edge_id, cost)
-        return
 
     def updateCosts(self, edge_id):
         'Complex cost function using neural networks to determine route costs'
@@ -314,25 +290,25 @@ class runSimulation():
 
         if prediction[0] == 1:
             pollution_class = 1
-            #if current_rank[1] < 2:
-            #    if pollution_class <= current_rank[0]:
-            #        pollution_class = current_rank[0]
+            if current_rank[1] < 2:
+                if pollution_class <= current_rank[0]:
+                    pollution_class = current_rank[0]
         else:
             rank2pred = self.rank2id.predict(shaped_data)
             prediction = np.argmax(rank2pred, axis=1)
             if prediction[0] == 1:
                 pollution_class = 2
-                #if current_rank[1] < 2:
-                #    if pollution_class <= current_rank[0]:
-                #        pollution_class = current_rank[0]
+                if current_rank[1] < 2:
+                    if pollution_class <= current_rank[0]:
+                        pollution_class = current_rank[0]
             else:
                 rank4pred = self.rank4id.predict(shaped_data)
                 prediction = np.argmax(rank4pred, axis=1)
                 if prediction[0] == 1:
                     pollution_class = 4
-                    #if current_rank[1] < 2:
-                    #    if pollution_class <= current_rank[0]:
-                    #        pollution_class = current_rank[0]
+                    if current_rank[1] < 2:
+                        if pollution_class <= current_rank[0]:
+                            pollution_class = current_rank[0]
                 else:
                     pollution_class = 3
 
