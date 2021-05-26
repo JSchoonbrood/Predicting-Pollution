@@ -107,8 +107,8 @@ def run():
 
     val_labels4 = val_features4.pop('Rank4Identifier')
 
-    #rank1_identifier = model(train_features1, train_labels1, val_features1, val_labels1, 3, os.path.join(current_dir, 'rank1identifier.h5'))
-    #rank2_identifier = model(train_features2, train_labels2, val_features2, val_labels2, 3, os.path.join(current_dir, 'rank2identifier.h5'))
+    rank1_identifier = model(train_features1, train_labels1, val_features1, val_labels1, 3, os.path.join(current_dir, 'rank1identifier.h5'))
+    rank2_identifier = model(train_features2, train_labels2, val_features2, val_labels2, 3, os.path.join(current_dir, 'rank2identifier.h5'))
     #rank3_identifier = model(train_features, trian_labels3, val_features, val_labels3, 3, os.path.join(current_dir, 'rank3identifier.h5'))
     rank4_identifier = model(train_features4, train_labels4, val_features4, val_labels4, 3, os.path.join(current_dir, 'rank4identifier.h5'))
 
