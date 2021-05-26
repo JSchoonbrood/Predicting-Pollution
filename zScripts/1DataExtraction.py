@@ -49,8 +49,8 @@ class runSimulation():
             with open(self.output_file_name, 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(["Edge", "CO2_Emissions", "CO_Emissions",
-                                 "HC_Emissions", "NOx_Emissions", "Mean_Speed",
-                                 "Estimated_Travel_Time", "Traffic_Level",
+                                 "HC_Emissions", "NOx_Emissions", "PMx_Emissions",
+                                 "Mean_Speed", "Estimated_Travel_Time", "Traffic_Level",
                                  "Total_Neighbours", "Length", "Step_Count"])
                 file.close()
 
@@ -106,8 +106,9 @@ class runSimulation():
         CO_Emission = traci.edge.getCOEmission(edge_id)
         HC_Emission = traci.edge.getHCEmission(edge_id)
         NOx_Emission = traci.edge.getNOxEmission(edge_id)
+        PMx_Emission = traci.edge.getPMxEmission(edge_id)
         # print ([CO2_Emission, CO_Emission, HC_Emission, NOx_Emission])
-        return [CO2_Emission, CO_Emission, HC_Emission, NOx_Emission]
+        return [CO2_Emission, CO_Emission, HC_Emission, NOx_Emission, PMx_Emission]
 
     def getEdgeTravelTime(self, edge_id):
         '''Edge travel time would be a prediction we can make in real life.'''
@@ -170,7 +171,7 @@ class runSimulation():
             length = values[1]
 
             current_row = [current_edge, emissions[0], emissions[1],
-                           emissions[2], emissions[3], mean_speed,
+                           emissions[2], emissions[3], emissions[4], mean_speed,
                            estimated_travel_time, traffic_level, neighbours,
                            length, self.step]
             rows.append(current_row)
