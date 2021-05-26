@@ -35,8 +35,8 @@ for fname in (os.listdir(processed_dir)):
                         writer.writerow(new_row)
                     else:
                         basic_rank = (((1*float(row[1])) + (1*float(row[2]))
-                                      + (1*float(row[3])) + (1*float(row[4])))
-                                      / float(row[9]))
+                                      + (1*float(row[3])) + (1*float(row[4]))
+                                      + (1*float(row[5]))) / float(row[10]))
 
                         if basic_rank < 50: #Rank1
                             basic_rank = 0
