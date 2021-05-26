@@ -28,7 +28,7 @@ class runSimulation():
 
         # Automated Process To Process Multiple Simulations
         base = 1
-        for i in range(2):
+        for i in range(9):
             mapfile = "map_" + str((base+i))
             file1 = str(mapfile) + ".sumocfg"
             file2 = str(mapfile) + ".net.xml"
