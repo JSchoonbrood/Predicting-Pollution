@@ -21,7 +21,7 @@ for file_name in data_files:
             reader = csv.reader(file)
             data = list(reader)
             for row in data:
-                if (row[1] == row[2] == row[3] == row[4]) and (int(row[7]) >= 0):
+                if (row[1] == row[2] == row[3] == row[4] == row[5]) and (int(row[8]) >= 0):
                     pass
                 else:
                     writer.writerow(row)
