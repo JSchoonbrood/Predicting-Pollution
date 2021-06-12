@@ -21,9 +21,7 @@ else:
 class runSimulation():
     def __init__(self):
         current_dir = Path(os.path.dirname(__file__))
-        self.rank1id = tf.keras.models.load_model(os.path.join(current_dir, 'rank1identifier.h5'))
-        self.rank2id = tf.keras.models.load_model(os.path.join(current_dir, 'rank2identifier.h5'))
-        self.rank4id = tf.keras.models.load_model(os.path.join(current_dir, 'rank4identifier.h5'))
+        self.emissionsmodel = tf.keras.models.load_model(os.path.join(current_dir, 'EmissionsModel.h5'))
 
         # Solves weird directory bugs during automation
         if sys.platform == "linux" or sys.platform == "linux2":
@@ -72,9 +70,17 @@ class runSimulation():
             # Contains cost for each pollution class
             self.cost = {
             1 : 1,
-            2 : 1.5,
-            3 : 2,
-            4 : 5,
+            2 : 1,
+            3 : 1,
+            4 : 1,
+            5 : 1,
+            6 : 1,
+            7 : 1,
+            8 : 1,
+            9 : 1,
+            10 : 100,
+            11 : 100,
+            12 : 100
             }
 
             for i in range(10):
@@ -137,13 +143,13 @@ class runSimulation():
         # Edge : Pollution Class, Counter
         self.rank_log = {edge : [1, 0] for edge in self.edges}
 
-        VEH_ID = "999999" # Spawned vehicle ID
+        self.VEH_ID = "999999" # Spawned vehicle ID
         vehicle_spawned = False # Variable to determine if vehicle spawned
         self.step = traci.simulation.getTime() # Current step
         self.previousDistance = 99999
         spawnstep = self.step + 500 # What step to spawn the vehicle
         self.dynamic_interval = 25 # How often a route should be updated, changes during simulation
-        initialRoute = False
+        self.routeInitialised = False
         route_found = False # Used to determine if route is real
 
         # Catch false routes (two separate methods required due to bugs)
@@ -166,8 +172,8 @@ class runSimulation():
 
                 # Catch errors with false routes
                 if self.step == spawnstep:
-                    self.tripped1 = self.addVehicle(VEH_ID, self.start_edge)
-                    self.tripped2 = self.initialRoute(VEH_ID, self.start_edge, self.end_edge)
+                    self.tripped1 = self.addVehicle(self.VEH_ID, self.start_edge)
+                    self.tripped2 = self.self.routeInitialised(self.VEH_ID, self.start_edge, self.end_edge)
                     if (self.tripped1 or self.tripped2) == "Error":
                         traci.close()
                         break
@@ -177,46 +183,22 @@ class runSimulation():
                 # Update routing method based on routing choice
                 if vehicle_spawned:
                     if (self.dijkstra and self.global_cost):
-                        print ("\nDijkstra & Global Cost")
-                        if self.step == spawnstep:
-                            for edge in self.edges:
-                                self.updateCosts(edge)
-                            self.updateRoute(VEH_ID, False)
+                        self.dijkstra_global()
                     elif (self.dynamic_dijkstra and self.global_cost):
-                        print ("\nDynamic Dijkstra & Global Cost")
-                        if (traci.vehicle.getRoadID(VEH_ID) != "") and (initialRoute == False):
-                            for edge in self.edges:
-                                self.updateCosts(edge)
-                            self.updateRoute(VEH_ID, False)
-                            initialRoute = True
-                            distance = self.getDistance(VEH_ID, self.end_edge)
-                            self.dynamic_interval = self.intervalUpdater(distance)
-                        elif (traci.vehicle.getRoadID(VEH_ID) != "") and (initialRoute == True):
-                            if ((self.step % 25) == 0): #self.dynamic_interval instead of 25
-                                print (self.rank_log)
-                                for edge in self.edges:
-                                    self.updateCosts(edge)
-                                self.updateRoute(VEH_ID, False)
-                                distance = self.getDistance(VEH_ID, self.end_edge)
-                                self.dynamic_interval = self.intervalUpdater(distance)
-                                print ("\nEdge ->", traci.vehicle.getRoadID(VEH_ID))
-                                print ("\nDistance -> ", distance)
+                        self.dyn_dijkstra_global()
                     elif self.dijkstra:
-                        print ("\nDijkstra")
-                        if self.step == spawnstep:
-                            self.updateRoute(VEH_ID, True)
+                        self.dijkstra_std()
                     elif self.dynamic_dijkstra:
-                        print ("\nDynamic Dijkstra")
-                        if ((self.step % 25) == 0) or (self.step == spawnstep):
-                            self.updateRoute(VEH_ID, True)
+                        self.dyn_dijkstra_std()
+
                     try:
-                        current_edge = traci.vehicle.getRoadID(VEH_ID)
+                        current_edge = traci.vehicle.getRoadID(self.VEH_ID)
                     except traci.exceptions.TraCIException:
                         traci.close()
                         break
 
                     if current_edge != self.end_edge:
-                        emissions = self.getEmissions(VEH_ID)
+                        emissions = self.getEmissions(self.VEH_ID)
                         self.writer.writerow(emissions)
                     else:
                         traci.close()
@@ -225,6 +207,51 @@ class runSimulation():
             self.output.close()
 
             return [self.start_edge, self.end_edge]
+
+    def dijkstra_global(self):
+        print ("\nDijkstra & Global Cost")
+        if self.step == spawnstep:
+            for edge in self.edges:
+                self.updateCosts(edge)
+            self.updateRoute(self.VEH_ID, False)
+        return
+
+    def dyn_dijkstra_global(self):
+        print ("\nDynamic Dijkstra & Global Cost")
+        try:
+            if (traci.vehicle.getRoadID(self.VEH_ID) != "") and (self.routeInitialised == False):
+                for edge in self.edges:
+                    self.updateCosts(edge)
+                self.updateRoute(self.VEH_ID, False)
+                self.routeInitialised = True
+                distance = self.getDistance(self.VEH_ID, self.end_edge)
+                self.dynamic_interval = self.intervalUpdater(distance)
+            elif (traci.vehicle.getRoadID(self.VEH_ID) != "") and (self.routeInitialised == True):
+                if ((self.step % 25) == 0): #self.dynamic_interval instead of 25
+                    print (self.rank_log)
+                    for edge in self.edges:
+                        self.updateCosts(edge)
+                    self.updateRoute(self.VEH_ID, False)
+                    distance = self.getDistance(self.VEH_ID, self.end_edge)
+                    self.dynamic_interval = self.intervalUpdater(distance)
+                    print ("\nEdge ->", traci.vehicle.getRoadID(self.VEH_ID))
+                    print ("\nDistance -> ", distance)
+        except:
+            pass
+        return
+
+    def dijkstra_std(self):
+        print ("\nDijkstra")
+        if self.step == spawnstep:
+            self.updateRoute(self.VEH_ID, True)
+        return
+
+    def dyn_dijkstra_std(self):
+        print ("\nDynamic Dijkstra")
+        if ((self.step % 25) == 0) or (self.step == spawnstep):
+            self.updateRoute(self.VEH_ID, True)
+        return
+
 
     def edgeGenerator(self, override=False):
         'Generates start and end edges randomly'
@@ -246,10 +273,10 @@ class runSimulation():
             raise RoutingError()
         return
 
-    def initialRoute(self, VEH_ID, start_edge, end_edge):
+    def initialRoute(self, veh_id, start_edge, end_edge):
         'Finds an initial route, subject to change depending on routing method'
         route = traci.simulation.findRoute(start_edge, end_edge)
-        traci.vehicle.setRoute(VEH_ID, route.edges)
+        traci.vehicle.setRoute(veh_id, route.edges)
         return
 
     def addVehicle(self, veh_id, start_edge):
@@ -271,11 +298,9 @@ class runSimulation():
         'Complex cost function using neural networks to determine route costs'
         get_edge = self.net.getEdge(edge_id)
         length = get_edge.getLength()
-
         speed = traci.edge.getLastStepMeanSpeed(edge_id)
         estimated_travel_time = traci.edge.getTraveltime(edge_id)
         total_neighbours = self.neighbours.get(edge_id)
-        traffic_level = traci.edge.getLastStepVehicleNumber(edge_id)
 
         input_data = [speed, estimated_travel_time, total_neighbours, length]
         shaped_data = np.reshape(input_data, (4, 1)).T
@@ -285,38 +310,19 @@ class runSimulation():
             current_rank[0] = 1
             current_rank[1] = 0
 
-        rank1pred = self.rank1id.predict(shaped_data)
-        prediction = np.argmax(rank1pred, axis=1)
+        model_pred = self.emissionsmodel.predict(shaped_data)
+        prediction = np.argmax(model_pred, axis=1)
+        pollution_class = prediction[0]
 
-        if prediction[0] == 1:
-            pollution_class = 1
-            if current_rank[1] < 2:
-                if pollution_class <= current_rank[0]:
-                    pollution_class = current_rank[0]
-        else:
-            rank2pred = self.rank2id.predict(shaped_data)
-            prediction = np.argmax(rank2pred, axis=1)
-            if prediction[0] == 1:
-                pollution_class = 2
-                if current_rank[1] < 2:
-                    if pollution_class <= current_rank[0]:
-                        pollution_class = current_rank[0]
-            else:
-                rank4pred = self.rank4id.predict(shaped_data)
-                prediction = np.argmax(rank4pred, axis=1)
-                if prediction[0] == 1:
-                    pollution_class = 4
-                    if current_rank[1] < 2:
-                        if pollution_class <= current_rank[0]:
-                            pollution_class = current_rank[0]
-                else:
-                    pollution_class = 3
+        # Short Term Memory Implementation
+        if current_rank[1] < 2:
+            if pollution_class <= current_rank[0]:
+                pollution_class = current_rank[0]
 
         cost = self.cost[pollution_class]
-        updated_cost = 1*(cost*estimated_travel_time) + 1*(estimated_travel_time)
+        updated_cost = (cost*estimated_travel_time)
 
         traci.edge.adaptTraveltime(edge_id, updated_cost)
-
         current_rank = [pollution_class, (current_rank[1]+1)]
         self.rank_log[edge_id] = current_rank
         return
@@ -341,9 +347,10 @@ class runSimulation():
             CO_Emission = traci.edge.getCOEmission(edge_id)
             HC_Emission = traci.edge.getHCEmission(edge_id)
             NOx_Emission = traci.edge.getNOxEmission(edge_id)
-            return [CO2_Emission, CO_Emission, HC_Emission, NOx_Emission]
+            PMx_Emission = traci.edge.getPMxEmission(edge_id)
+            return [CO2_Emission, CO_Emission, HC_Emission, NOx_Emission, PMx_Emission]
         else:
-            return [0, 0, 0, 0]
+            return [0, 0, 0, 0, 0]
 
     def getDistance(self, veh_id, end_edge):
         'Gets vehicles distance from end edge'
