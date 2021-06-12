@@ -93,8 +93,23 @@ def run():
     train_features = train_df.copy()
     train_labels = train_features.pop('OverallRank')
 
+<<<<<<< HEAD:zScripts/4TrainNetwork.py
     val_features = val_df.copy()
     val_labels = val_features.pop('OverallRank')
+=======
+    val_labels4 = val_features4.pop('Rank4Identifier')
+
+    rank1_identifier = model(train_features1, train_labels1, val_features1, val_labels1, 3, os.path.join(current_dir, 'rank1identifier.h5'))
+    rank2_identifier = model(train_features2, train_labels2, val_features2, val_labels2, 3, os.path.join(current_dir, 'rank2identifier.h5'))
+    #rank3_identifier = model(train_features, trian_labels3, val_features, val_labels3, 3, os.path.join(current_dir, 'rank3identifier.h5'))
+    rank4_identifier = model(train_features4, train_labels4, val_features4, val_labels4, 3, os.path.join(current_dir, 'rank4identifier.h5'))
+
+    #visualiseModel(history)
+    rank1 = load_model(os.path.join(current_dir, 'rank1identifier.h5'))
+    rank2 = load_model(os.path.join(current_dir, 'rank2identifier.h5'))
+    #rank3 = load_model(os.path.join(current_dir, 'rank3identifier.h5'))
+    rank4 = load_model(os.path.join(current_dir, 'rank4identifier.h5'))
+>>>>>>> 291779c33a4bdd8f3575449c893a30b9a27346b5:zScripts/Train-Network.py
 
     test_features = test_df.copy()
     test_labels = test_features.pop('OverallRank')

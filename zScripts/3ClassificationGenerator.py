@@ -35,6 +35,7 @@ for fname in (os.listdir(processed_dir)):
                                    "Length", "OverallRank"]
                         writer.writerow(new_row)
                     else:
+<<<<<<< HEAD
                         basic_rank = (((1*float(row[2]))
                                       + (100*float(row[3])) + (100*float(row[4]))
                                       + (1000*float(row[5])) / (10000)))
@@ -43,6 +44,11 @@ for fname in (os.listdir(processed_dir)):
 
                         if rank_index >= 12:
                             rank_index = 11
+=======
+                        basic_rank = (((1*float(row[1])) + (1*float(row[2]))
+                                      + (1*float(row[3])) + (1*float(row[4]))
+                                      + (1*float(row[5]))) / float(row[10]))
+>>>>>>> 291779c33a4bdd8f3575449c893a30b9a27346b5
 
                         counters[rank_index] += 1
 
