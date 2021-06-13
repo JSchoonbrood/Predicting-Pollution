@@ -14,16 +14,16 @@ def run():
         data_dir = os.path.join(current_dir.parent, 'TEST_CSV\\')
 
     test_files = os.listdir(data_dir)
-    print (test_files)
-    for i in range(len(test_files)):
-        if test_files[i] == "map_1_DDGC_14.csv":
-            del test_files[i]
-            break
+   # print (test_files)
+   # for i in range(len(test_files)):
+   #     if test_files[i] == "map_1_DDGC_14.csv":
+   #         del test_files[i]
+   #         break
 
 
     dataframes = []
     for fname in test_files:
-        if fname in [".gitignore", "Figure_1.png", "map_1edgesused.csv", "properties.txt"]:
+        if fname in [".gitignore", "Figure_1.png", "map_11edgesused.csv", "properties.txt", "map_12edgesused.csv", "map_13edgesused.csv"]:
             pass
         else:
             print (fname)
