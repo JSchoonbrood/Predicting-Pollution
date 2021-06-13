@@ -31,11 +31,9 @@ class runSimulation():
             sim_dir =  os.path.join(current_dir.parent, 'OSM\\TESTING_SIMS\\SUMO_FILES\\')
             csv_dir = os.path.join(current_dir.parent, 'TEST_CSV\\')
 
-        # Run All Tests Without Supervision
-        base = 1
-        # Dijkstra, DynamicDijkstra, GlobalCost
-        self.options = [True, False, True]
-        for i in range(1):
+        base = 12
+        for i in range(2):
+            self.options = [True, False, True] # Dijkstra, DynamicDijkstra, GlobalCost
             mapfile = "map_" + str((base+i)) # Identifies which map to run tests on automatically
             file1 = str(mapfile) + ".sumocfg"
             file2 = str(mapfile) + ".net.xml"
@@ -70,20 +68,20 @@ class runSimulation():
             # Contains cost for each pollution class
             self.cost = {
             1 : 1,
-            2 : 1,
-            3 : 1,
-            4 : 1,
-            5 : 1,
-            6 : 1,
-            7 : 1,
-            8 : 1,
-            9 : 1,
-            10 : 100,
-            11 : 100,
-            12 : 100
+            2 : 1.3,
+            3 : 1.6,
+            4 : 1.9,
+            5 : 2.2,
+            6 : 2.5,
+            7 : 2.8,
+            8 : 3.1,
+            9 : 3.4,
+            10 : 3.7,
+            11 : 4,
+            12 : 10
             }
 
-            for i in range(10):
+            for i in range(5):
                 self.edgeGenerator()
 
             # Run simulation for each posisble route
@@ -147,7 +145,7 @@ class runSimulation():
         vehicle_spawned = False # Variable to determine if vehicle spawned
         self.step = traci.simulation.getTime() # Current step
         self.previousDistance = 99999
-        spawnstep = self.step + 500 # What step to spawn the vehicle
+        self.spawnstep = self.step + 500 # What step to spawn the vehicle
         self.dynamic_interval = 25 # How often a route should be updated, changes during simulation
         self.routeInitialised = False
         route_found = False # Used to determine if route is real
@@ -171,9 +169,9 @@ class runSimulation():
                 self.step += 1 # Track simulation step
 
                 # Catch errors with false routes
-                if self.step == spawnstep:
+                if self.step == self.spawnstep:
                     self.tripped1 = self.addVehicle(self.VEH_ID, self.start_edge)
-                    self.tripped2 = self.self.routeInitialised(self.VEH_ID, self.start_edge, self.end_edge)
+                    self.tripped2 = self.initialRoute(self.VEH_ID, self.start_edge, self.end_edge)
                     if (self.tripped1 or self.tripped2) == "Error":
                         traci.close()
                         break
@@ -199,6 +197,9 @@ class runSimulation():
 
                     if current_edge != self.end_edge:
                         emissions = self.getEmissions(self.VEH_ID)
+                        driving_distance = traci.vehicle.getDistance(self.VEH_ID)
+                        emissions.append(current_edge)
+                        emissions.append(driving_distance)
                         self.writer.writerow(emissions)
                     else:
                         traci.close()
@@ -210,7 +211,7 @@ class runSimulation():
 
     def dijkstra_global(self):
         print ("\nDijkstra & Global Cost")
-        if self.step == spawnstep:
+        if self.step == self.spawnstep:
             for edge in self.edges:
                 self.updateCosts(edge)
             self.updateRoute(self.VEH_ID, False)
@@ -227,8 +228,7 @@ class runSimulation():
                 distance = self.getDistance(self.VEH_ID, self.end_edge)
                 self.dynamic_interval = self.intervalUpdater(distance)
             elif (traci.vehicle.getRoadID(self.VEH_ID) != "") and (self.routeInitialised == True):
-                if ((self.step % 25) == 0): #self.dynamic_interval instead of 25
-                    print (self.rank_log)
+                if ((self.step % 30) == 0): #self.dynamic_interval instead of 25
                     for edge in self.edges:
                         self.updateCosts(edge)
                     self.updateRoute(self.VEH_ID, False)
@@ -242,14 +242,16 @@ class runSimulation():
 
     def dijkstra_std(self):
         print ("\nDijkstra")
-        if self.step == spawnstep:
+        if self.step == self.spawnstep:
             self.updateRoute(self.VEH_ID, True)
         return
 
     def dyn_dijkstra_std(self):
         print ("\nDynamic Dijkstra")
-        if ((self.step % 25) == 0) or (self.step == spawnstep):
+        if ((self.step % 30) == 0) or (self.step == self.spawnstep):
             self.updateRoute(self.VEH_ID, True)
+            distance = self.getDistance(self.VEH_ID, self.end_edge)
+            self.dynamic_interval = self.intervalUpdater(distance)
         return
 
 
@@ -315,9 +317,9 @@ class runSimulation():
         pollution_class = prediction[0]
 
         # Short Term Memory Implementation
-        if current_rank[1] < 2:
-            if pollution_class <= current_rank[0]:
-                pollution_class = current_rank[0]
+        #if current_rank[1] < 2:
+        #    if pollution_class <= current_rank[0]:
+        #        pollution_class = current_rank[0]
 
         cost = self.cost[pollution_class]
         updated_cost = (cost*estimated_travel_time)
@@ -378,14 +380,12 @@ class runSimulation():
     def intervalUpdater(self, distance):
         'Dynamic interval updator based on distance to final destination'
         if distance > 5000:
-            interval = 80
+            interval = 150
         elif distance > 2500:
+            interval = 105
+        elif distance >= 0:
             interval = 60
-        elif distance > 1000:
-            interval = 35
-        elif distance < 1000:
-            interval = 25
-
+        
         print ("\nInterval -> ", interval)
         return interval
 
