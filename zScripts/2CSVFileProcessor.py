@@ -14,10 +14,9 @@ elif sys.platform == "win32":
 # Pre-Processed Datafiles
 data_files = os.listdir(data_dir)
 
-for file_name in data_files:
-    processed_file_name = (new_dir +
-                           str(file_name.replace(".csv", "_processed.csv")))
-    with open(processed_file_name, 'w', newline='') as processed_file:
+for fname in data_files:
+    processed_fname = (new_dir + str(fname.replace(".csv", "_processed.csv")))
+    with open(processed_fname, 'w', newline='') as processed_file:
         writer = csv.writer(processed_file)
         with open(os.path.join(data_dir, file_name), 'r', newline='') as file:
             reader = csv.reader(file)
