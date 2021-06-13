@@ -16,12 +16,12 @@ from numpy import concatenate
 
 def showCorrelations(dataframe):
     df_corr = dataframe.corr()
-    f = pyplot.figure(figsize=(19, 15))
+    f = pyplot.figure(figsize=(20, 20))
     pyplot.matshow(df_corr, fignum=f.number)
     pyplot.xticks(range(dataframe.select_dtypes(['number']).shape[1]), dataframe.select_dtypes(['number']).columns, fontsize=14, rotation=45)
     pyplot.yticks(range(dataframe.select_dtypes(['number']).shape[1]), dataframe.select_dtypes(['number']).columns, fontsize=14)
     cb = pyplot.colorbar()
-    cb.ax.tick_params(labelsize=14)
+    cb.ax.tick_params(labelsize=10)
     pyplot.title('Correlation Matrix', fontsize=16);
     pyplot.show()
 
@@ -49,14 +49,14 @@ class LearningRateReducerCb(tf.keras.callbacks.Callback):
 
 def model(train_x, train_y, test_x, test_y, output_neurons, output_file_name):
     model = tf.keras.Sequential()
-    model.add(Dense(64, input_dim=(train_x.shape[1]), activation='sigmoid'))
+    model.add(Dense(64, input_dim=(train_x.shape[1]), activation='relu'))
     model.add(BatchNormalization())
     model.add(Dropout(0.2))
-    model.add(Dense(32, activation='sigmoid'))
-    model.add(Dense(16, activation='sigmoid'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(16, activation='relu'))
     model.add(Dense(output_neurons, activation='softmax'))
     opt = tf.keras.optimizers.Adam(learning_rate=0.001)
-    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
 
     early_stop = keras.callbacks.EarlyStopping(monitor='accuracy', min_delta=0, patience=15, verbose=0, mode='max', baseline=None)
@@ -84,9 +84,11 @@ def run():
             dataframes.append(data)
     dataframe = pd.concat(dataframes)
 
+    dataframe.pop('Traffic_Level')
+
+    #dataframe.pop('OverallRank')
     #showCorrelations(dataframe)
 
-    dataframe.pop('Traffic_Level')
     train_df, test_df = train_test_split(dataframe, test_size=0.2, shuffle=True)
     train_df, val_df = train_test_split(train_df, test_size=0.2, shuffle=True)
 
@@ -115,6 +117,11 @@ def run():
         rankpred = pred_model.predict(test_data)
         prediction = np.argmax(rankpred, axis=1)
         y_pred.append(prediction[0])
+
+        if prediction[0] == test_targets:
+            score += 1
+
+    print ("Accuracy ->", (score/5000))
 
     conf_matrix_file_html = os.path.join(current_dir.parent,
                                      'ConfusionMatrix.html')
