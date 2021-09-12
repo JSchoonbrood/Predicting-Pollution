@@ -8,6 +8,8 @@ Using the routing method proposed in conjunction with Dijkstra, the determined v
 Note:
 The dynamic method of pollution-optimal routing was outperformed by static pollution-optimal routing. This was determined to be caused by short trip durations and updating of the vehicle route too regularly. The simple solution would be to increase trip durations & and increase the time between route updates, however due to the low CPU utilisation of the simulation software (SUMO: Simulation Of Urban Mobility) and the time constraints, this was not deemed possible.
 
+The results have been analysed in detail which indicate that the proposed routing method can reduce strain on infrastructure while reducing high pollution zones and lowering overall pollution exposure.
+
 # How To Use
 All Programming Files are located within /Scripts/.
 
@@ -27,3 +29,6 @@ Future development is currently limited until SUMO implements more advanced weat
 
 The suggested bypass:
 Extract RoadID's and corresponding NodeID's for each Road and determine the distance between each road. From there, manually add a % of one roads emission values to nearby roads, for each road. However this can lead to inflated pollution values and a uniform dominoes effect that can greatly increase every roads pollution level in an unrealistic manor unless regulated correctly. This model would only account for the wind aspect of air pollution, which significance can vary depending on environment and number of vehicles.
+
+# Notes
+Due to github size limits, examples of simulations have not been included. Use requires intermediate ability with SUMO and manually altering config files for each scenario.
